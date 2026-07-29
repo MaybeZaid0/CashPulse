@@ -2,7 +2,7 @@
 
 > **Project**: CashPulse — Lending Intelligence Engine for UBL Relationship Managers  
 > **Context**: Hackathon project. Backend-first approach using FastAPI (Python).  
-> **Strategy**: 5 phases, backend-driven, with a thin HTML/JS frontend that talks to the API. Each phase is independently testable before moving to the next.
+> **Strategy**: 5 phases, backend-driven, with a Next.js (React) frontend that talks to the API. Each phase is independently testable before moving to the next.
 
 ---
 
@@ -15,7 +15,7 @@
 | 2     | Feature Engineering + Scoring | Working scoring engine, REST API returns scores  | 3–4 hrs     |
 | 3     | Eligibility + Recommendation  | Full assessment response with recommendation     | 2 hrs       |
 | 4     | Dashboard API + Charts        | All API routes complete, chart data endpoints    | 2–3 hrs     |
-| 5     | Frontend Integration + Polish | Full working web app from prototype HTML         | 3–4 hrs     |
+| 5     | Frontend Integration + Polish | Full working Next.js web app from prototype HTML | 3–4 hrs     |
 
 **Total estimated effort**: 13–18 hours of active coding.
 
@@ -59,11 +59,11 @@ Cash Pulse/
 │   │   └── core/               ← Config, JWT, security helpers
 │   └── scripts/
 │       └── seed_data.py        ← Synthetic data generator/seeder
-└── frontend/                   ← Thin HTML/JS frontend (to be created)
-    ├── index.html
-    ├── style.css
-    └── app.js
-```
+└── frontend/                   ← Next.js frontend (to be created)
+    ├── package.json
+    ├── app/                    ← Next.js App Router pages
+    ├── components/             ← Reusable UI components
+    └── lib/                    ← API client and utilities
 
 ---
 
@@ -112,7 +112,7 @@ Cash Pulse/
 
 ### Phase 5 — Frontend Integration + Polish
 **Goal**: A working, beautiful web app that matches the mockup prototype.
-- Convert the `mockups/cashpulse-prototype.html` into a real multi-page app
+- Convert the `mockups/cashpulse-prototype.html` into a real Next.js application (App Router)
 - Wire all screens to the live API (login, portfolio list, assessment flow, dashboard)
 - Render real chart data using Chart.js
 - Full responsive polish (mobile sidebar, etc.)

@@ -1,19 +1,18 @@
 # Phase 5 — Frontend Integration & Polish
 
-> **Goal**: Transform the static `mockups/cashpulse-prototype.html` into a live, multi-screen web application that is fully wired to the FastAPI backend. The frontend is a clean vanilla HTML/CSS/JS app — no build tools required.  
+> **Goal**: Transform the static `mockups/cashpulse-prototype.html` into a live, multi-screen web application that is fully wired to the FastAPI backend. We will build this using **Next.js (App Router)** and React.  
 > **Acceptance Test**: Full end-to-end demo flow works: Login → Portfolio → New Assessment → Dashboard (with real charts) → Decision capture.
 
 ---
 
 ## Frontend Architecture Decision
 
-Since the backend is FastAPI (not a Next.js/React project), the frontend will be:
-- **Vanilla HTML + CSS + JavaScript** (no build tools, no bundler)
-- **Chart.js** for rendering cashflow and pillar charts
-- Structured as a **Single Page Application (SPA)** — one `index.html`, `app.js` handles screen routing
-- Mirrors the exact design and interaction from `mockups/cashpulse-prototype.html`
-
-This keeps the stack simple and lets the backend be the focus.
+Based on the requirements, the frontend will be built with:
+- **Next.js 14+ (App Router)** for routing and server-side logic
+- **React** for building interactive, reusable UI components
+- **Tailwind CSS** or plain CSS Modules (translating the design system)
+- **Chart.js (via react-chartjs-2)** for rendering cashflow and pillar charts
+- **Axios or Fetch** for API client communication
 
 ---
 
@@ -21,252 +20,132 @@ This keeps the stack simple and lets the backend be the focus.
 
 ```
 frontend/
-├── index.html         ← Shell: loads CSS + JS, holds all screen templates
-├── style.css          ← All styles (from design-system.md + prototype CSS)
-└── app.js             ← All JS: API client, router, screen rendering, charts
+├── package.json
+├── tsconfig.json (optional, if using TypeScript)
+├── next.config.mjs
+├── app/
+│   ├── layout.js              ← Root layout (includes global CSS)
+│   ├── globals.css            ← Translated from prototype CSS
+│   ├── page.js                ← Login screen (/)
+│   ├── (workspace)/           ← Route group for authenticated views
+│   │   ├── layout.js          ← Sidebar and Topbar wrapper
+│   │   ├── portfolio/page.js  ← SME list
+│   │   ├── new-assessment/    ← Multi-step assessment flow
+│   │   └── dashboard/[id]/    ← The full assessment dashboard
+├── components/                ← Reusable React components
+│   ├── ui/                    ← Buttons, Cards, Modals
+│   ├── charts/                ← React-Chart.js wrappers
+│   └── Dashboard/             ← Specific dashboard sections (ScoreRing, PillarCard)
+└── lib/
+    └── api.js                 ← API client wrappers
 ```
 
 ---
 
-## Frontend Screens (matching prototype)
+## API Client (`lib/api.js`)
 
-| Screen ID  | Route / Trigger                  | Description |
-|------------|----------------------------------|-------------|
-| `login`    | Initial load                     | Login form — calls `POST /api/auth/login` |
-| `portfolio`| After login                      | SME table — calls `GET /api/smes` |
-| `flow1`    | "New Assessment" button          | Assessment step 1: SME + loan details |
-| `flow2`    | After step 1                     | Confirm data window, trigger analysis |
-| `analyzing`| After step 2 submit              | Loading spinner while `POST /api/assessments` runs |
-| `dashboard`| After analysis completes         | Full dashboard: score, pillars, chart, recommendation |
-| `report`   | "View Report" button             | Printable summary view |
-
----
-
-## API Client (`app.js` — `APIClient` module)
-
-All backend calls go through a central API client:
+Create a centralized API service that handles authentication tokens automatically (e.g., retrieving the JWT from localStorage/cookies and appending it).
 
 ```javascript
-const API_BASE = "http://localhost:8000/api";
-let authToken = null;
+const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api";
 
-const API = {
-  async login(email, password) {
-    const res = await fetch(`${API_BASE}/auth/login`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ email, password }),
-    });
-    if (!res.ok) throw new Error("Invalid credentials");
-    const data = await res.json();
-    authToken = data.access_token;
-    return data;
-  },
-
-  async getSMEs() {
-    return await authFetch(`${API_BASE}/smes`);
-  },
-
-  async getSME(id) {
-    return await authFetch(`${API_BASE}/smes/${id}`);
-  },
-
-  async createAssessment(smeId, requestedLoan, requestedTenure) {
-    return await authFetch(`${API_BASE}/assessments`, {
-      method: "POST",
-      body: JSON.stringify({ sme_id: smeId, requested_loan: requestedLoan, requested_tenure: requestedTenure }),
-    });
-  },
-
-  async getAssessment(id) {
-    return await authFetch(`${API_BASE}/assessments/${id}`);
-  },
-
-  async recordDecision(assessmentId, decision, note) {
-    return await authFetch(`${API_BASE}/assessments/${assessmentId}/decision`, {
-      method: "POST",
-      body: JSON.stringify({ decision, note }),
-    });
-  },
-
-  async getReport(assessmentId) {
-    return await authFetch(`${API_BASE}/assessments/${assessmentId}/report`);
-  }
-};
-
-async function authFetch(url, options = {}) {
-  const res = await fetch(url, {
+export async function authFetch(endpoint, options = {}) {
+  const token = localStorage.getItem('token'); // or use cookies for better security
+  const res = await fetch(`${API_BASE}${endpoint}`, {
     ...options,
     headers: {
-      "Authorization": `Bearer ${authToken}`,
+      "Authorization": `Bearer ${token}`,
       "Content-Type": "application/json",
       ...(options.headers || {}),
     },
   });
-  if (res.status === 401) { go("login"); return; }
+  
+  if (res.status === 401) { 
+    window.location.href = '/'; // redirect to login
+    throw new Error('Unauthorized'); 
+  }
+  
   if (!res.ok) throw new Error(await res.text());
   return res.json();
 }
-```
 
----
-
-## Chart Rendering (Chart.js)
-
-Chart.js is loaded from CDN — no installation needed.
-
-### Cashflow Bar Chart
-
-```javascript
-function renderCashflowChart(canvasId, cashflowSeries) {
-  const labels   = cashflowSeries.map(m => m.month);
-  const inflows  = cashflowSeries.map(m => m.inflow);
-  const outflows = cashflowSeries.map(m => m.outflow);
-  const nets     = cashflowSeries.map(m => m.net);
-
-  new Chart(document.getElementById(canvasId), {
-    type: "bar",
-    data: {
-      labels,
-      datasets: [
-        { label: "Inflow",  data: inflows,  backgroundColor: "#1E9E5A", borderRadius: 6 },
-        { label: "Outflow", data: outflows, backgroundColor: "#D6455B", borderRadius: 6 },
-        { label: "Net",     data: nets,     type: "line", borderColor: "#0083CA", tension: 0.4, fill: false, pointRadius: 4 },
-      ]
-    },
-    options: {
-      responsive: true,
-      plugins: { legend: { position: "bottom" } },
-      scales: {
-        y: { ticks: { callback: v => "PKR " + (v/1000).toFixed(0) + "k" } }
-      }
-    }
-  });
-}
-```
-
-### Pillar Bar Chart (horizontal)
-
-```javascript
-function renderPillarChart(canvasId, pillarScores) {
-  const labels  = pillarScores.map(p => p.label);
-  const scores  = pillarScores.map(p => p.score);
-  const maxes   = pillarScores.map(p => p.max);
-  const colors  = scores.map((s, i) => {
-    const pct = s / maxes[i];
-    return pct >= 0.75 ? "#1E9E5A" : pct >= 0.50 ? "#E8A33D" : "#D6455B";
-  });
-
-  new Chart(document.getElementById(canvasId), {
-    type: "bar",
-    data: {
-      labels,
-      datasets: [
-        { label: "Score", data: scores, backgroundColor: colors, borderRadius: 6 }
-      ]
-    },
-    options: {
-      indexAxis: "y",   // horizontal bars
-      responsive: true,
-      plugins: { legend: { display: false } },
-      scales: { x: { max: 30 } }
-    }
-  });
-}
-```
-
-### Readiness Score Gauge (SVG-based, matches prototype)
-
-```javascript
-function renderGauge(svgId, score, band) {
-  const colors = { "Strong": "#1E9E5A", "Review": "#E8A33D", "High Risk": "#D6455B" };
-  const color  = colors[band] || "#0083CA";
-  const radius = 70, cx = 84, cy = 84;
-  const circumference = 2 * Math.PI * radius;
-  const dashArray = (score / 100) * circumference;
+export const API = {
+  login: (email, password) => fetch(`${API_BASE}/auth/login`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ email, password }),
+  }).then(r => r.json()),
   
-  document.getElementById(svgId).innerHTML = `
-    <circle cx="${cx}" cy="${cy}" r="${radius}" fill="none" stroke="#E4EBF2" stroke-width="12"/>
-    <circle cx="${cx}" cy="${cy}" r="${radius}" fill="none" stroke="${color}" stroke-width="12"
-            stroke-dasharray="${dashArray} ${circumference}"
-            stroke-dashoffset="0" stroke-linecap="round"
-            style="transition: stroke-dasharray 1s ease"/>
-  `;
-}
+  getSMEs: () => authFetch('/smes'),
+  getAssessment: (id) => authFetch(`/assessments/${id}`),
+  createAssessment: (smeId, loan, tenure) => authFetch('/assessments', {
+      method: 'POST',
+      body: JSON.stringify({ sme_id: smeId, requested_loan: loan, requested_tenure: tenure })
+  }),
+  recordDecision: (id, decision, note) => authFetch(`/assessments/${id}/decision`, {
+      method: 'POST',
+      body: JSON.stringify({ decision, note })
+  })
+};
 ```
 
 ---
 
-## Screen Rendering Strategy
+## Next.js Pages (Routes)
 
-Each screen is a function that:
-1. Injects HTML into the main `#app-container` div
-2. Calls the appropriate API
-3. Renders charts after the DOM is updated
+### 1. `/` (Login Page)
+Renders the login form matching the prototype's `login` screen. Submitting calls `API.login()`. On success, saves the token and redirects to `/portfolio`.
+
+### 2. `/portfolio` (Portfolio View)
+Uses a React `useEffect` or server component data fetching to load `API.getSMEs()`. Renders the data table with Readiness score chips. Clicking a row goes to `/new-assessment?smeId=...` or `/dashboard/[id]` if it already has an assessment.
+
+### 3. `/new-assessment` (Flow)
+A client component that manages state for a multi-step form (Step 1: Loan inputs, Step 2: Confirmation). On final submit, it calls `API.createAssessment()` and displays a loading spinner matching the `analyzing` screen from the prototype. On success, it redirects to `/dashboard/[new_id]`.
+
+### 4. `/dashboard/[id]`
+The core view. Fetches the full assessment data via `API.getAssessment(id)`. Passes data down to child components:
+- `<ScoreRing score={data.readiness} band={data.readiness_band} />`
+- `<CashflowChart series={data.cashflow_series} />`
+- `<PillarsList scores={data.pillar_scores} />`
+- `<RecommendationPanel data={data.recommendation} />`
+
+---
+
+## Chart Rendering (react-chartjs-2)
+
+Translate the vanilla Chart.js into React components.
 
 ```javascript
-const SCREENS = { login, portfolio, dashboard, ... };
+import { Bar } from 'react-chartjs-2';
+import { Chart as ChartJS, CategoryScale, LinearScale, BarElement, LineElement, PointElement, Title, Tooltip, Legend, LineController } from 'chart.js';
 
-function go(screenName, params = {}) {
-  document.getElementById("app-container").innerHTML = "";
-  SCREENS[screenName](params);
-  updateURL(screenName);
+ChartJS.register(CategoryScale, LinearScale, BarElement, LineElement, PointElement, Title, Tooltip, Legend, LineController);
+
+export default function CashflowChart({ series }) {
+  const data = {
+    labels: series.map(m => m.month),
+    datasets: [
+      { label: "Inflow",  data: series.map(m => m.inflow),  backgroundColor: "#1E9E5A", borderRadius: 6 },
+      { label: "Outflow", data: series.map(m => m.outflow), backgroundColor: "#D6455B", borderRadius: 6 },
+      { label: "Net",     data: series.map(m => m.net),     type: "line", borderColor: "#0083CA", tension: 0.4, fill: false }
+    ]
+  };
+
+  return <Bar data={data} options={{ responsive: true }} />;
 }
 ```
-
----
-
-## Dashboard Screen — Rendering Logic
-
-```javascript
-async function dashboard({ assessmentId }) {
-  const assessment = await API.getAssessment(assessmentId);
-  const { pillarScores, readiness, readinessBand, recommendation,
-          cashflowSeries, eligibility, smeName } = assessment;
-
-  // 1. Render the full dashboard HTML (mirrors prototype s-dashboard)
-  document.getElementById("app-container").innerHTML = getDashboardHTML(assessment);
-
-  // 2. Render gauge
-  renderGauge("gaugeCanvas", readiness, readinessBand);
-
-  // 3. Render cashflow chart
-  renderCashflowChart("cashflowChart", cashflowSeries);
-
-  // 4. Render pillar chart
-  renderPillarChart("pillarChart", pillarScores);
-
-  // 5. Wire pillar expand/collapse interactions
-  document.querySelectorAll(".pillar").forEach(el => {
-    el.addEventListener("click", () => el.classList.toggle("open"));
-  });
-
-  // 6. Wire decision buttons
-  document.getElementById("btn-accept").addEventListener("click", () => captureDecision(assessmentId, "ACCEPT"));
-  document.getElementById("btn-counter").addEventListener("click", () => captureDecision(assessmentId, "COUNTER"));
-  document.getElementById("btn-escalate").addEventListener("click", () => captureDecision(assessmentId, "ESCALATE"));
-}
-```
-
----
-
-## Responsiveness & Mobile
-
-- The CSS from the prototype already handles all responsive behavior (sidebar → drawer on mobile, single-column grids, etc.)
-- A `ResizeObserver` or CSS media queries handle layout switching automatically
-- Touch targets are all ≥ 44px per design system
 
 ---
 
 ## Acceptance Criteria
 
+- [ ] `npm run dev` starts the Next.js server successfully on port 3000
 - [ ] Login screen calls real API and shows error for bad credentials
 - [ ] Portfolio screen shows real SMEs from the database with readiness chips
 - [ ] Clicking an SME navigates to "New Assessment" flow with that SME pre-selected
 - [ ] `POST /api/assessments` is triggered on step 2 submit, loading spinner shown during wait
-- [ ] Dashboard displays real readiness score, pillar scores with evidence, and real cashflow chart
+- [ ] Dashboard displays real readiness score, pillar scores with evidence, and real cashflow chart via React-Chart.js
 - [ ] Pillar cards expand on click to show `reason` + `evidence` from the API
 - [ ] Recommendation panel shows the correct type (APPROVE / COUNTER-OFFER / MANUAL REVIEW) with correct amount
 - [ ] Decision buttons call `POST /api/assessments/{id}/decision` and confirm success
-- [ ] Desktop and mobile layouts match the prototype (test at 360px and 1280px)
-- [ ] No horizontal scroll on mobile (≤360px width)
+- [ ] Desktop and mobile layouts match the prototype using responsive Tailwind/CSS.

@@ -37,7 +37,20 @@ Alternatively, install **MongoDB Compass** (GUI) from https://www.mongodb.com/tr
 
 ---
 
-### 3. Git (version control)
+### 3. Node.js (for Frontend)
+
+Download and install from: https://nodejs.org/ (LTS version)
+
+```bash
+node -v
+# Expected: v18.x or v20.x
+npm -v
+# Expected: 9.x or 10.x
+```
+
+---
+
+### 4. Git (version control)
 
 ```bash
 git --version
@@ -199,11 +212,22 @@ Visit http://127.0.0.1:8000/docs — you should see the **FastAPI auto-generated
 
 ---
 
-### Step 7 — Open the Frontend
+### Step 7 — Start the Frontend (Next.js)
 
-Open `frontend/index.html` directly in a browser (or use VS Code's Live Server extension).
+Open a **new terminal** (leave the FastAPI server running) and start the Next.js development server:
 
-> For development, VS Code's **Live Server** extension is recommended so the browser auto-refreshes on file changes.
+```bash
+cd frontend
+npm install
+npm run dev
+```
+
+Expected output:
+```
+ready - started server on 0.0.0.0:3000, url: http://localhost:3000
+```
+
+Visit http://localhost:3000 — you should see the CashPulse login screen.
 
 ---
 
