@@ -67,7 +67,7 @@ function scoreRepaymentCapacity(
 ): PillarEvidence {
   const nets = sme.monthlyInflows.map((v, i) => v - sme.monthlyOutflows[i]);
   const avgNet = mean(nets);
-  const requestedInstalment = requestedAmount / tenureMonths;
+  const requestedInstalment = requestedAmount / (tenureMonths || 1);
   const safeCapacity = avgNet * SCORING_CONFIG.safeRepaymentRatio;
 
   const ratio = safeCapacity / (requestedInstalment || 1);
@@ -237,20 +237,33 @@ function computeEligibility(
   const nets = sme.monthlyInflows.map((v, i) => v - sme.monthlyOutflows[i]);
   const avgNet = mean(nets);
   const safeMonthlyInstalment = Math.max(0, avgNet * SCORING_CONFIG.safeRepaymentRatio);
-  const maxSafeCapacity = safeMonthlyInstalment * tenureMonths;
+  
+  // Constant Max Borrowing Capacity for this SME profile (independent of asked loan amount)
+  let maxBorrowingCapacity = safeMonthlyInstalment * tenureMonths * (readinessScore / 100);
+  maxBorrowingCapacity = Math.max(50_000, Math.floor(maxBorrowingCapacity / 10_000) * 10_000);
 
-  let recommended = Math.min(maxSafeCapacity, requestedAmount);
-  recommended = recommended * (readinessScore / 100);
-  recommended = Math.max(250_000, Math.floor(recommended / 50_000) * 50_000);
+  // Recommended amount:
+  // If requestedAmount <= maxBorrowingCapacity -> approve full requestedAmount
+  // If requestedAmount > maxBorrowingCapacity -> counter offer maxBorrowingCapacity
+  const recommendedAmount = requestedAmount <= maxBorrowingCapacity ? requestedAmount : maxBorrowingCapacity;
 
-  const requestedInstalment = requestedAmount / tenureMonths;
+  const requestedInstalment = requestedAmount / (tenureMonths || 1);
+
+  // Deal Fit Ratio (1.0 if asked <= capacity, < 1.0 if over-asking)
+  const loanFitRatio = Math.min(1.0, maxBorrowingCapacity / (requestedAmount || 1));
+
+  // Dynamic Deal Eligibility Score (0 - 100)
+  const eligibilityScore = Math.round(readinessScore * loanFitRatio);
 
   return {
     requestedAmount,
-    recommendedAmount: recommended,
+    maxBorrowingCapacity,
+    recommendedAmount,
     safeMonthlyInstalment: Math.round(safeMonthlyInstalment),
     requestedInstalment: Math.round(requestedInstalment),
-    coverageRatio: recommended / (requestedAmount || 1),
+    coverageRatio: recommendedAmount / (requestedAmount || 1),
+    eligibilityScore,
+    loanFitRatio: Math.round(loanFitRatio * 100) / 100,
   };
 }
 
@@ -264,32 +277,34 @@ function computeRecommendation(
   let reason: string;
   const evidence: string[] = [];
 
-  const { requestedAmount, recommendedAmount, coverageRatio, safeMonthlyInstalment, requestedInstalment } = eligibility;
+  const { requestedAmount, maxBorrowingCapacity, recommendedAmount, safeMonthlyInstalment, requestedInstalment, eligibilityScore } = eligibility;
 
-  // AC F-8.1: If requested amount <= safe recommended amount AND readiness >= 80 -> Approve
-  if (readinessScore >= SCORING_CONFIG.strongThreshold && coverageRatio >= 0.95) {
+  // Case A: Asked loan <= Max Capacity AND Readiness >= 60 -> APPROVE full asked amount
+  if (requestedAmount <= maxBorrowingCapacity && readinessScore >= SCORING_CONFIG.reviewThreshold) {
     type = "APPROVE";
-    reason = `Strong readiness score (${readinessScore}/100) and requested loan amount is within safe capacity limit.`;
-    evidence.push(`Readiness Score: ${readinessScore}/100 (above Strong threshold of ${SCORING_CONFIG.strongThreshold})`);
-    evidence.push(`Requested loan PKR ${requestedAmount.toLocaleString()} is supported by recommended limit of PKR ${recommendedAmount.toLocaleString()}`);
-    evidence.push(`Monthly instalment PKR ${requestedInstalment.toLocaleString()} is fully covered by safe monthly capacity PKR ${safeMonthlyInstalment.toLocaleString()}`);
+    reason = `Requested loan of PKR ${requestedAmount.toLocaleString()} is fully supported within safe max borrowing capacity (PKR ${maxBorrowingCapacity.toLocaleString()}). Deal Eligibility Score: ${eligibilityScore}/100.`;
+    evidence.push(`Financing Readiness Score: ${readinessScore}/100 (5-Pillar Profile Health)`);
+    evidence.push(`Deal Eligibility Score: ${eligibilityScore}/100 (High Deal Fit for PKR ${requestedAmount.toLocaleString()})`);
+    evidence.push(`Requested loan PKR ${requestedAmount.toLocaleString()} is fully supported by max capacity PKR ${maxBorrowingCapacity.toLocaleString()}`);
+    evidence.push(`Monthly instalment PKR ${requestedInstalment.toLocaleString()}/mo is covered by safe monthly capacity PKR ${safeMonthlyInstalment.toLocaleString()}/mo`);
   }
-  // AC F-8.2: If requested > safe amount but readiness >= 60 -> Counter-offer at safe amount
-  else if (readinessScore >= SCORING_CONFIG.reviewThreshold || coverageRatio >= 0.5) {
+  // Case B: Asked loan > Max Capacity AND Readiness >= 60 -> COUNTER OFFER with Max Capacity limit
+  else if (readinessScore >= SCORING_CONFIG.reviewThreshold) {
     type = "COUNTER_OFFER";
-    reason = `Requested loan exceeds safe capacity. Recommending counter-offer limit of PKR ${recommendedAmount.toLocaleString()}.`;
-    evidence.push(`Readiness Score: ${readinessScore}/100 (Review band: ${SCORING_CONFIG.reviewThreshold}-${SCORING_CONFIG.strongThreshold - 1})`);
-    evidence.push(`Requested PKR ${requestedAmount.toLocaleString()} exceeds safe capacity`);
-    evidence.push(`Recommended counter-offer: PKR ${recommendedAmount.toLocaleString()} (${(coverageRatio * 100).toFixed(0)}% of asked)`);
-    evidence.push(`Adjusted zero-interest instalment: PKR ${Math.round(recommendedAmount / (requestedAmount / (requestedInstalment || 1))).toLocaleString()}/mo`);
+    reason = `Requested loan of PKR ${requestedAmount.toLocaleString()} exceeds safe capacity limit. Deal Eligibility Score: ${eligibilityScore}/100. Recommending counter-offer limit of PKR ${recommendedAmount.toLocaleString()}.`;
+    evidence.push(`Financing Readiness Score: ${readinessScore}/100`);
+    evidence.push(`Deal Eligibility Score: ${eligibilityScore}/100 (Over-leverage risk detected for asked PKR ${requestedAmount.toLocaleString()})`);
+    evidence.push(`Requested PKR ${requestedAmount.toLocaleString()} exceeds max borrowing capacity PKR ${maxBorrowingCapacity.toLocaleString()}`);
+    evidence.push(`Recommended approved counter-offer limit: PKR ${recommendedAmount.toLocaleString()}`);
   }
-  // AC F-8.3: Else -> Manual Review
+  // Case C: Readiness < 60 (High Risk) -> MANUAL REVIEW
   else {
     type = "MANUAL_REVIEW";
     reason = `Readiness score (${readinessScore}/100) is in high risk band (<${SCORING_CONFIG.reviewThreshold}). Escalating for senior credit officer review.`;
-    evidence.push(`Readiness Score: ${readinessScore}/100 (below ${SCORING_CONFIG.reviewThreshold} threshold)`);
-    evidence.push(`Safe monthly capacity PKR ${safeMonthlyInstalment.toLocaleString()} vs required PKR ${requestedInstalment.toLocaleString()}`);
-    evidence.push(`Requires senior credit officer review and collateral evaluation`);
+    evidence.push(`Financing Readiness Score: ${readinessScore}/100 (below ${SCORING_CONFIG.reviewThreshold} threshold)`);
+    evidence.push(`Deal Eligibility Score: ${eligibilityScore}/100`);
+    evidence.push(`Safe monthly capacity PKR ${safeMonthlyInstalment.toLocaleString()}/mo vs required PKR ${requestedInstalment.toLocaleString()}/mo`);
+    evidence.push(`Requires senior credit officer manual evaluation`);
   }
 
   return { type, reason, evidence };

@@ -16,6 +16,7 @@ import {
   ChevronUp,
   FileText,
   Info,
+  MessageSquare,
 } from "lucide-react";
 
 interface ApplicationStatusViewProps {
@@ -48,7 +49,7 @@ export default function ApplicationStatusView({ sme }: ApplicationStatusViewProp
 
   if (smeApps.length === 0) {
     return (
-      <div className="bg-white rounded-2xl p-10 border border-[#E5E7EB] shadow-sm text-center space-y-4">
+      <div className="bg-white rounded-2xl p-10 border border-[#E5E7EB] shadow-sm text-center space-y-4 font-sans">
         <Building2 className="w-12 h-12 text-slate-300 mx-auto" />
         <div className="space-y-1">
           <h3 className="font-extrabold text-[#081921] text-lg">No Financing History Found</h3>
@@ -63,7 +64,7 @@ export default function ApplicationStatusView({ sme }: ApplicationStatusViewProp
   const approvedApps = smeApps.filter((a) => a.status === "APPROVED");
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 font-sans">
       {/* SME Loan History Header Banner */}
       <div className="bg-[#081921] text-white rounded-2xl p-6 border border-[#0f2e3d] space-y-4">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
@@ -314,6 +315,19 @@ export default function ApplicationStatusView({ sme }: ApplicationStatusViewProp
                           </div>
                         </div>
 
+                        {/* Custom RM Typed Remarks Card */}
+                        {app.rmNotes && (
+                          <div className="bg-amber-50 border border-amber-200 p-4 rounded-xl space-y-1.5 shadow-sm">
+                            <div className="flex items-center space-x-2 text-amber-700 font-extrabold text-xs uppercase tracking-wider">
+                              <MessageSquare className="w-4 h-4 text-amber-600" />
+                              <span>Official Relationship Manager Remarks:</span>
+                            </div>
+                            <p className="text-xs text-amber-950 font-medium leading-relaxed bg-white p-3 rounded-lg border border-amber-200/80">
+                              "{app.rmNotes}"
+                            </p>
+                          </div>
+                        )}
+
                         {/* Indirect 5-Pillar Feedback Panel */}
                         <div className="bg-white p-4 rounded-xl border border-[#E8A33D]/40 space-y-2">
                           <div className="flex items-center space-x-2 text-[#E8A33D] font-extrabold text-xs uppercase tracking-wider">
@@ -329,13 +343,6 @@ export default function ApplicationStatusView({ sme }: ApplicationStatusViewProp
                             ))}
                           </ul>
                         </div>
-
-                        {app.rmNotes && (
-                          <div className="bg-amber-50/80 p-3 rounded-lg border border-amber-200 text-xs text-amber-900">
-                            <span className="font-bold block mb-1">Relationship Manager Note:</span>
-                            <p>{app.rmNotes}</p>
-                          </div>
-                        )}
 
                         <div className="pt-2">
                           <button
@@ -358,6 +365,19 @@ export default function ApplicationStatusView({ sme }: ApplicationStatusViewProp
                           After reviewing your 6-month UBL core banking records, UBL loan officers were unable to approve this loan request at this time.
                         </p>
 
+                        {/* Custom RM Typed Remarks Card */}
+                        {app.rmNotes && (
+                          <div className="bg-slate-950 border border-slate-800 p-4 rounded-xl space-y-1.5">
+                            <div className="flex items-center space-x-2 text-amber-400 font-extrabold text-xs uppercase tracking-wider">
+                              <MessageSquare className="w-4 h-4 text-amber-400" />
+                              <span>Official Relationship Manager Remarks:</span>
+                            </div>
+                            <p className="text-xs text-slate-200 font-medium leading-relaxed bg-slate-900 p-3 rounded-lg border border-slate-800">
+                              "{app.rmNotes}"
+                            </p>
+                          </div>
+                        )}
+
                         {/* Indirect 5-Pillar Feedback Panel */}
                         <div className="bg-slate-950 p-4 rounded-xl border border-slate-800 space-y-2">
                           <div className="flex items-center space-x-2 text-rose-400 font-extrabold text-xs uppercase tracking-wider">
@@ -373,13 +393,6 @@ export default function ApplicationStatusView({ sme }: ApplicationStatusViewProp
                             ))}
                           </ul>
                         </div>
-
-                        {app.rmNotes && (
-                          <div className="bg-slate-950 p-3 rounded-lg border border-slate-800 text-xs text-slate-300">
-                            <span className="font-bold text-amber-400 block mb-1">Official RM Note:</span>
-                            <p>{app.rmNotes}</p>
-                          </div>
-                        )}
                       </div>
                     )}
 
@@ -392,6 +405,19 @@ export default function ApplicationStatusView({ sme }: ApplicationStatusViewProp
                         <p className="text-xs text-[#081921] leading-relaxed">
                           Your application requires senior credit officer review and manual document verification. A UBL credit officer will contact your registered business phone number.
                         </p>
+
+                        {/* Custom RM Typed Remarks Card */}
+                        {app.rmNotes && (
+                          <div className="bg-white border border-[#D6455B]/30 p-4 rounded-xl space-y-1.5">
+                            <div className="flex items-center space-x-2 text-[#D6455B] font-extrabold text-xs uppercase tracking-wider">
+                              <MessageSquare className="w-4 h-4" />
+                              <span>Official Relationship Manager Remarks:</span>
+                            </div>
+                            <p className="text-xs text-slate-800 font-medium leading-relaxed bg-[#F4F7FB] p-3 rounded-lg border border-slate-200">
+                              "{app.rmNotes}"
+                            </p>
+                          </div>
+                        )}
 
                         {/* Indirect 5-Pillar Feedback Panel */}
                         <div className="bg-white p-4 rounded-xl border border-[#D6455B]/30 space-y-2">
