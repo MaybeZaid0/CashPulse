@@ -1,0 +1,30 @@
+# Web framework
+fastapi
+uvicorn[standard]
+
+# Database
+motor
+pymongo
+
+# Auth & Security
+python-jose[cryptography]
+passlib[bcrypt]
+python-multipart
+
+# Data & Charts
+pandas
+numpy
+scipy
+matplotlib
+Pillow
+
+# Utilities
+python-dotenv
+httpx
+pydantic
+pydantic-settings
+email-validator
+
+# Dev & Testing
+pytest
+pytest-asyncio

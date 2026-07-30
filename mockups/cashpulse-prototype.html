@@ -1,0 +1,628 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>CashPulse — Lending Intelligence Engine (UBL)</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Poppins:wght@500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --blue:#0083CA; --blue-d:#005B8F; --navy:#012A4A; --cyan:#00B7E4; --teal:#17A398;
+  --surface:#fff; --bg:#F4F7FB; --ink:#0E1B2A; --muted:#5B6B7C; --line:#E4EBF2;
+  --success:#1E9E5A; --warn:#E8A33D; --danger:#D6455B; --gold:#F2A900;
+  --r-card:16px; --r-btn:10px; --sh:0 6px 24px rgba(1,42,74,.06); --sh2:0 14px 40px rgba(1,42,74,.12);
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Inter',sans-serif;background:#dfe7ef;color:var(--ink);-webkit-font-smoothing:antialiased}
+h1,h2,h3,.disp{font-family:'Poppins',sans-serif}
+button{font-family:inherit;cursor:pointer;border:none}
+.num{font-family:'Poppins',sans-serif;font-variant-numeric:tabular-nums}
+
+.browser{max-width:1180px;margin:22px auto;background:var(--bg);border-radius:14px;overflow:hidden;box-shadow:var(--sh2);border:1px solid #cdd8e4}
+.chrome{display:flex;align-items:center;gap:10px;background:#e9eef4;padding:10px 14px;border-bottom:1px solid #d5dfe9}
+.dots{display:flex;gap:6px}.dots i{width:11px;height:11px;border-radius:50%;display:block}
+.dots i:nth-child(1){background:#ff5f57}.dots i:nth-child(2){background:#febc2e}.dots i:nth-child(3){background:#28c840}
+.url{flex:1;background:#fff;border:1px solid #d5dfe9;border-radius:8px;padding:6px 12px;font-size:12.5px;color:var(--muted);display:flex;align-items:center;gap:7px}
+.url b{color:var(--ink);font-weight:600}
+.toggle{display:flex;background:#fff;border:1px solid #d5dfe9;border-radius:8px;overflow:hidden}
+.toggle button{padding:6px 12px;background:#fff;font-size:12px;color:var(--muted)}
+.toggle button.on{background:var(--blue);color:#fff}
+
+.viewport{height:720px;overflow:hidden;position:relative;background:var(--bg)}
+.viewport.mobile-mode{max-width:390px;margin:0 auto;border-left:1px solid var(--line);border-right:1px solid var(--line)}
+.screen{position:absolute;inset:0;overflow:auto;opacity:0;pointer-events:none;transition:opacity .35s}
+.screen.active{opacity:1;pointer-events:auto}
+
+.login{display:grid;grid-template-columns:1.05fr .95fr;height:100%}
+.login-art{background:linear-gradient(160deg,var(--navy),var(--blue) 70%,var(--cyan));position:relative;overflow:hidden;color:#fff;padding:44px}
+.login-art .blob{position:absolute;border-radius:50%;filter:blur(2px);opacity:.25}
+.login-art .b1{width:280px;height:280px;background:var(--cyan);right:-70px;top:-60px}
+.login-art .b2{width:200px;height:200px;background:#fff;left:-50px;bottom:-40px;opacity:.12}
+.brand{display:flex;align-items:center;gap:12px;position:relative;z-index:2}
+.logo{width:44px;height:44px;border-radius:12px;background:#fff;display:grid;place-items:center;font-family:'Poppins';font-weight:700;color:var(--blue);font-size:20px}
+.brand .bt{font-family:'Poppins';font-weight:700;font-size:20px}
+.brand .bs{font-size:11px;opacity:.8;letter-spacing:.5px}
+.login-art h1{position:relative;z-index:2;margin-top:80px;font-size:34px;line-height:1.2;font-weight:700}
+.login-art p{position:relative;z-index:2;margin-top:16px;opacity:.9;max-width:360px;line-height:1.6}
+.pulse-line{position:relative;z-index:2;margin-top:40px;height:60px}
+.chip-w{display:inline-flex;gap:8px;flex-wrap:wrap;margin-top:26px;position:relative;z-index:2}
+.chip-w span{background:rgba(255,255,255,.15);border:1px solid rgba(255,255,255,.25);padding:6px 12px;border-radius:999px;font-size:12px}
+.login-form{background:#fff;display:flex;flex-direction:column;justify-content:center;padding:48px}
+.login-form h2{font-size:24px}.login-form .sub{color:var(--muted);margin-top:6px;margin-bottom:26px;font-size:14px}
+label{font-size:12.5px;font-weight:600;color:var(--ink);display:block;margin:14px 0 6px}
+.inp{width:100%;height:44px;border:1px solid var(--line);border-radius:var(--r-btn);padding:0 14px;font-size:14px;font-family:inherit;background:#fbfcfe}
+.inp:focus{outline:none;border-color:var(--blue);box-shadow:0 0 0 3px rgba(0,131,202,.12)}
+.btn{height:44px;border-radius:var(--r-btn);background:var(--blue);color:#fff;font-weight:600;font-size:14.5px;padding:0 20px;transition:background .15s}
+.btn:hover{background:var(--blue-d)}
+.btn.block{width:100%;margin-top:22px}
+.btn.sec{background:#fff;color:var(--blue);border:1px solid var(--blue)}
+.btn.sec:hover{background:#f0f8fd}
+.btn.ghost{background:transparent;color:var(--muted)}
+.hint{font-size:12px;color:var(--muted);margin-top:14px;text-align:center}
+.hint b{color:var(--blue)}
+
+.app{display:flex;height:100%}
+.side{width:248px;background:var(--navy);color:#cfe0ee;flex:0 0 248px;display:flex;flex-direction:column;padding:20px 14px;transition:margin .3s}
+.side .brand{margin:6px 8px 26px}
+.side .brand .bt,.side .brand .bs{color:#fff}
+.nav{display:flex;flex-direction:column;gap:4px}
+.nav a{display:flex;align-items:center;gap:12px;padding:11px 14px;border-radius:10px;color:#aec6db;font-size:14px;font-weight:500;text-decoration:none;position:relative}
+.nav a .ic{width:18px;text-align:center}
+.nav a:hover{background:rgba(255,255,255,.06);color:#fff}
+.nav a.on{background:rgba(0,131,202,.28);color:#fff}
+.nav a.on:before{content:"";position:absolute;left:0;top:8px;bottom:8px;width:3px;border-radius:3px;background:var(--cyan)}
+.side .foot{margin-top:auto;padding:14px;border-top:1px solid rgba(255,255,255,.1);display:flex;align-items:center;gap:10px}
+.avatar{width:34px;height:34px;border-radius:50%;background:linear-gradient(135deg,var(--cyan),var(--blue));display:grid;place-items:center;color:#fff;font-weight:600;font-size:13px}
+.side .foot .nm{font-size:13px;color:#fff;font-weight:600}.side .foot .rl{font-size:11px;color:#9fbad2}
+
+.main{flex:1;overflow:auto}
+.topbar{display:flex;align-items:center;gap:14px;padding:16px 26px;background:#fff;border-bottom:1px solid var(--line);position:sticky;top:0;z-index:5}
+.burger{display:none;background:#f1f5f9;width:38px;height:38px;border-radius:9px;font-size:17px;color:var(--navy)}
+.topbar h2{font-size:19px}
+.topbar .grow{flex:1}
+.search{background:#f4f7fb;border:1px solid var(--line);border-radius:10px;height:38px;padding:0 14px;width:240px;font-size:13px}
+.pill{background:#eaf6fd;color:var(--blue);border-radius:999px;padding:6px 12px;font-size:12px;font-weight:600}
+.content{padding:26px}
+
+.grid{display:grid;gap:18px}
+.g4{grid-template-columns:repeat(4,1fr)} .g3{grid-template-columns:repeat(3,1fr)} .g2{grid-template-columns:repeat(2,1fr)}
+.card{background:#fff;border:1px solid var(--line);border-radius:var(--r-card);box-shadow:var(--sh);padding:20px}
+.card h3{font-size:16px;margin-bottom:2px}
+.kpi .lbl{font-size:12.5px;color:var(--muted);font-weight:500}
+.kpi .val{font-size:26px;font-weight:700;margin-top:8px}
+.kpi .val small{font-size:13px;font-weight:600;color:var(--muted)}
+.kpi .dl{font-size:12px;margin-top:6px}
+.up{color:var(--success)}.down{color:var(--danger)}
+
+.chip{display:inline-flex;align-items:center;gap:6px;border-radius:999px;font-size:12px;font-weight:600;padding:5px 11px}
+.chip.g{background:#e7f6ee;color:var(--success)} .chip.a{background:#fdf2e0;color:#b9791f} .chip.r{background:#fbe8eb;color:var(--danger)}
+.chip.v{background:#fff5df;color:#a4750a} .chip.b{background:#eaf6fd;color:var(--blue)}
+
+.tablewrap{background:#fff;border:1px solid var(--line);border-radius:var(--r-card);box-shadow:var(--sh);overflow:hidden}
+.thead,.trow{display:grid;grid-template-columns:2.4fr 1.3fr 1fr 1.2fr 1fr;align-items:center;gap:10px;padding:14px 20px}
+.thead{background:#f7fafd;font-size:12px;color:var(--muted);font-weight:600;text-transform:uppercase;letter-spacing:.4px}
+.trow{border-top:1px solid var(--line);cursor:pointer;font-size:14px;transition:background .15s}
+.trow:hover{background:#f6fbfe}
+.sme{display:flex;align-items:center;gap:12px}
+.sme .ic{width:38px;height:38px;border-radius:10px;background:#eaf6fd;color:var(--blue);display:grid;place-items:center;font-weight:700;font-size:14px}
+.sme .nm{font-weight:600}.sme .sec{font-size:12px;color:var(--muted)}
+.mini{height:8px;background:#eef3f8;border-radius:6px;overflow:hidden;width:90px}
+.mini i{display:block;height:100%;border-radius:6px}
+
+.flow{max-width:760px;margin:0 auto}
+.steps{display:flex;gap:8px;margin-bottom:26px;align-items:center;justify-content:center}
+.steps .st{display:flex;align-items:center;gap:9px;font-size:13px;color:var(--muted)}
+.steps .st .n{width:26px;height:26px;border-radius:50%;background:#e8eef5;display:grid;place-items:center;font-weight:600;font-size:13px}
+.steps .st.on{color:var(--ink);font-weight:600}.steps .st.on .n{background:var(--blue);color:#fff}
+.steps .st.done .n{background:var(--success);color:#fff}
+.steps .bar{width:44px;height:2px;background:#dbe4ee}
+.formrow{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+.seg{display:flex;gap:8px;flex-wrap:wrap}
+.seg button{border:1px solid var(--line);background:#fbfcfe;border-radius:10px;padding:9px 16px;font-size:13px;color:var(--ink);font-weight:500}
+.seg button.on{border-color:var(--blue);background:#eaf6fd;color:var(--blue)}
+.flow-actions{display:flex;justify-content:space-between;margin-top:26px}
+
+.analyzing{display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%;text-align:center;gap:18px}
+.ring-load{width:96px;height:96px;border-radius:50%;border:8px solid #e5eef6;border-top-color:var(--blue);animation:spin 1s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+.analyzing .steps-log{margin-top:6px;color:var(--muted);font-size:14px;min-height:22px}
+
+.scorecard{display:flex;gap:26px;align-items:center;flex-wrap:wrap}
+.gauge{position:relative;width:168px;height:168px;flex:0 0 168px}
+.gauge svg{transform:rotate(-90deg)}
+.gauge .cap{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center}
+.gauge .cap .s{font-size:44px;font-weight:700;line-height:1}
+.gauge .cap .of{font-size:12px;color:var(--muted)}
+.scoremeta{flex:1;min-width:240px}
+.scoremeta h3{font-size:15px;color:var(--muted);font-weight:600}
+.scoremeta .band{font-size:22px;font-weight:700;margin:6px 0}
+.scoremeta p{font-size:13.5px;color:var(--muted);line-height:1.55;max-width:420px}
+
+.pillar{background:#fff;border:1px solid var(--line);border-radius:14px;padding:16px 18px;box-shadow:var(--sh);cursor:pointer;transition:.15s}
+.pillar:hover{box-shadow:var(--sh2);transform:translateY(-1px)}
+.pillar .ph{display:flex;justify-content:space-between;align-items:flex-start}
+.pillar .pt{font-size:14px;font-weight:600}
+.pillar .pq{font-size:12px;color:var(--muted);margin-top:3px}
+.pillar .psc{font-family:'Poppins';font-weight:700;font-size:20px}
+.pbar{height:8px;background:#eef3f8;border-radius:6px;margin:12px 0 4px;overflow:hidden}
+.pbar i{display:block;height:100%;border-radius:6px}
+.pillar .evidence{max-height:0;overflow:hidden;transition:max-height .35s ease;font-size:13px;color:var(--muted)}
+.pillar.open .evidence{max-height:260px;margin-top:12px}
+.evidence .ev{display:flex;justify-content:space-between;padding:7px 0;border-top:1px dashed var(--line)}
+.evidence .ev b{color:var(--ink);font-weight:600}
+.reason{background:#f6fbfe;border-left:3px solid var(--blue);padding:10px 12px;border-radius:8px;color:var(--ink);margin-bottom:10px;font-size:13px}
+.expand-hint{font-size:11.5px;color:var(--blue);font-weight:600;margin-top:8px}
+
+.chart{width:100%;height:200px}
+.legend{display:flex;gap:18px;font-size:12px;color:var(--muted);margin-top:8px}
+.legend i{display:inline-block;width:10px;height:10px;border-radius:3px;margin-right:6px;vertical-align:middle}
+
+.rec{background:linear-gradient(135deg,#e7f6ee,#f4fbf7);border:1px solid #cbe9d6;border-radius:14px;padding:20px}
+.rec .rh{display:flex;align-items:center;gap:12px}
+.rec .badge{background:var(--success);color:#fff;border-radius:10px;padding:8px 14px;font-weight:700;font-size:14px;font-family:'Poppins'}
+.rec .amt{font-size:28px;font-weight:700;font-family:'Poppins';margin:12px 0 2px}
+.rec ul{list-style:none;margin-top:14px;display:grid;gap:8px}
+.rec ul li{display:flex;gap:9px;font-size:13.5px;color:var(--ink)}
+.rec ul li:before{content:"✓";color:var(--success);font-weight:700}
+.decide{display:flex;gap:10px;margin-top:18px;flex-wrap:wrap}
+
+.overlay{position:absolute;inset:0;background:rgba(1,42,74,.45);display:none;align-items:center;justify-content:center;z-index:30;padding:20px}
+.overlay.show{display:flex}
+.modal{background:#fff;border-radius:16px;max-width:420px;width:100%;padding:28px;text-align:center;box-shadow:var(--sh2)}
+.modal .ok{width:64px;height:64px;border-radius:50%;background:#e7f6ee;color:var(--success);display:grid;place-items:center;font-size:30px;margin:0 auto 14px}
+.modal h3{font-size:20px}.modal p{color:var(--muted);margin:8px 0 20px;font-size:14px;line-height:1.5}
+
+.drawer-scrim{position:absolute;inset:0;background:rgba(1,42,74,.4);display:none;z-index:20}
+.section-title{font-size:13px;color:var(--muted);font-weight:600;text-transform:uppercase;letter-spacing:.5px;margin:6px 0 12px}
+
+.mobile-mode .side{position:absolute;z-index:25;height:100%;margin-left:-260px;box-shadow:var(--sh2)}
+.mobile-mode .side.open{margin-left:0}
+.mobile-mode .burger{display:grid;place-items:center}
+.mobile-mode .drawer-scrim.show{display:block}
+.mobile-mode .g4,.mobile-mode .g3,.mobile-mode .g2{grid-template-columns:1fr}
+.mobile-mode .login{grid-template-columns:1fr}
+.mobile-mode .login-art{display:none}
+.mobile-mode .thead{display:none}
+.mobile-mode .trow{grid-template-columns:1fr;gap:8px;padding:16px}
+.mobile-mode .search{width:130px}
+.mobile-mode .formrow{grid-template-columns:1fr}
+.mobile-mode .scorecard{flex-direction:column;text-align:center}
+@media(max-width:860px){
+  .browser{margin:0;border-radius:0}
+  .g4,.g3{grid-template-columns:1fr 1fr}
+}
+</style>
+</head>
+<body>
+<div class="browser" id="browser">
+  <div class="chrome">
+    <div class="dots"><i></i><i></i><i></i></div>
+    <div class="url">🔒 <b>cashpulse.ubl.com.pk</b><span id="urlpath">/login</span></div>
+    <div class="toggle">
+      <button id="tDesk" class="on" onclick="setMode('desk')">🖥 Desktop</button>
+      <button id="tMob" onclick="setMode('mob')">📱 Mobile</button>
+    </div>
+  </div>
+
+  <div class="viewport" id="viewport">
+
+    <!-- ================= LOGIN ================= -->
+    <section class="screen active" id="s-login">
+      <div class="login">
+        <div class="login-art">
+          <div class="blob b1"></div><div class="blob b2"></div>
+          <div class="brand"><div class="logo">U</div><div><div class="bt">UBL CashPulse</div><div class="bs">LENDING INTELLIGENCE ENGINE</div></div></div>
+          <h1>Assess SME financial health in minutes, not days.</h1>
+          <p>AI-powered decision support for Relationship Managers — built on verified UBL transaction history. Every score is explainable.</p>
+          <svg class="pulse-line" viewBox="0 0 360 60" fill="none"><polyline points="0,40 40,42 70,20 100,34 140,10 180,38 220,16 260,30 300,8 340,26 360,22" stroke="#00B7E4" stroke-width="3" fill="none" stroke-linecap="round"/><polyline points="0,52 360,52" stroke="rgba(255,255,255,.2)" stroke-width="1"/></svg>
+          <div class="chip-w"><span>✓ Verified UBL data only</span><span>✓ No black-box scoring</span><span>✓ Human decides</span></div>
+        </div>
+        <div class="login-form">
+          <h2>Welcome back</h2>
+          <div class="sub">Sign in to your Relationship Manager workspace</div>
+          <label>Employee Email</label>
+          <input class="inp" value="a.rahman@ubl.com.pk"/>
+          <label>Password</label>
+          <input class="inp" type="password" value="demo1234"/>
+          <button class="btn block" onclick="go('portfolio')">Sign in to Workspace</button>
+          <div class="hint">Demo build — click <b>Sign in</b> to explore.</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ================= PORTFOLIO ================= -->
+    <section class="screen" id="s-portfolio">
+      <div class="app">
+        <div class="drawer-scrim" onclick="closeDrawer()"></div>
+        <aside class="side" id="side1">
+          <div class="brand"><div class="logo">U</div><div><div class="bt">CashPulse</div><div class="bs">UBL</div></div></div>
+          <nav class="nav">
+            <a class="on" href="javascript:void(0)">📊<span>Portfolio</span></a>
+            <a href="javascript:void(0)" onclick="go('flow1')">➕<span>New Assessment</span></a>
+            <a href="javascript:void(0)" onclick="go('dashboard')">🧭<span>Assessments</span></a>
+            <a href="javascript:void(0)">📈<span>Analytics</span></a>
+            <a href="javascript:void(0)">⚙️<span>Settings</span></a>
+          </nav>
+          <div class="foot"><div class="avatar">AR</div><div><div class="nm">Adnan Rahman</div><div class="rl">Relationship Manager</div></div></div>
+        </aside>
+        <div class="main">
+          <div class="topbar">
+            <button class="burger" onclick="openDrawer('side1')">☰</button>
+            <h2>SME Portfolio</h2><div class="grow"></div>
+            <input class="search" placeholder="Search SMEs…"/>
+            <button class="btn" onclick="go('flow1')">+ New Assessment</button>
+          </div>
+          <div class="content">
+            <div class="grid g4" style="margin-bottom:20px">
+              <div class="card kpi"><div class="lbl">Active SME files</div><div class="val num">48</div><div class="dl up">▲ 6 this week</div></div>
+              <div class="card kpi"><div class="lbl">Avg. assessment time</div><div class="val num">2.4<small> min</small></div><div class="dl up">▼ from 3 days</div></div>
+              <div class="card kpi"><div class="lbl">Pending RM review</div><div class="val num">11</div><div class="dl">amber band</div></div>
+              <div class="card kpi"><div class="lbl">Strong candidates</div><div class="val num">23</div><div class="dl up">readiness ≥ 80</div></div>
+            </div>
+            <div class="tablewrap">
+              <div class="thead"><div>Business</div><div>Requested Loan</div><div>Readiness</div><div>Status</div><div>Recommendation</div></div>
+              <div class="trow" onclick="loadSme('Al-Madina Traders')">
+                <div class="sme"><div class="ic">AM</div><div><div class="nm">Al-Madina Traders</div><div class="sec">Wholesale · Karachi</div></div></div>
+                <div class="num">PKR 8,000,000</div>
+                <div><div class="mini"><i style="width:86%;background:var(--success)"></i></div><small class="num">86 / 100</small></div>
+                <div><span class="chip g">Strong</span></div>
+                <div><span class="chip b">Approve</span></div>
+              </div>
+              <div class="trow" onclick="loadSme('Zephyr Textiles')">
+                <div class="sme"><div class="ic">ZT</div><div><div class="nm">Zephyr Textiles</div><div class="sec">Manufacturing · Faisalabad</div></div></div>
+                <div class="num">PKR 10,000,000</div>
+                <div><div class="mini"><i style="width:71%;background:var(--warn)"></i></div><small class="num">71 / 100</small></div>
+                <div><span class="chip a">RM Review</span></div>
+                <div><span class="chip b">Counter-offer</span></div>
+              </div>
+              <div class="trow" onclick="loadSme('Green Valley Foods')">
+                <div class="sme"><div class="ic">GV</div><div><div class="nm">Green Valley Foods</div><div class="sec">FMCG · Lahore</div></div></div>
+                <div class="num">PKR 5,500,000</div>
+                <div><div class="mini"><i style="width:82%;background:var(--success)"></i></div><small class="num">82 / 100</small></div>
+                <div><span class="chip g">Strong</span></div>
+                <div><span class="chip b">Approve</span></div>
+              </div>
+              <div class="trow" onclick="loadSme('Horizon Auto Parts')">
+                <div class="sme"><div class="ic">HA</div><div><div class="nm">Horizon Auto Parts</div><div class="sec">Retail · Rawalpindi</div></div></div>
+                <div class="num">PKR 4,000,000</div>
+                <div><div class="mini"><i style="width:54%;background:var(--danger)"></i></div><small class="num">54 / 100</small></div>
+                <div><span class="chip r">High risk</span></div>
+                <div><span class="chip b">Manual Review</span></div>
+              </div>
+              <div class="trow" onclick="loadSme('Sapphire Pharma')">
+                <div class="sme"><div class="ic">SP</div><div><div class="nm">Sapphire Pharma Distributors</div><div class="sec">Healthcare · Multan</div></div></div>
+                <div class="num">PKR 12,000,000</div>
+                <div><div class="mini"><i style="width:78%;background:var(--warn)"></i></div><small class="num">78 / 100</small></div>
+                <div><span class="chip a">RM Review</span></div>
+                <div><span class="chip b">Counter-offer</span></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ================= FLOW STEP 1 ================= -->
+    <section class="screen" id="s-flow1">
+      <div class="app">
+        <div class="drawer-scrim" onclick="closeDrawer()"></div>
+        <aside class="side" id="side2">
+          <div class="brand"><div class="logo">U</div><div><div class="bt">CashPulse</div><div class="bs">UBL</div></div></div>
+          <nav class="nav">
+            <a href="javascript:void(0)" onclick="go('portfolio')">📊<span>Portfolio</span></a>
+            <a class="on" href="javascript:void(0)">➕<span>New Assessment</span></a>
+            <a href="javascript:void(0)" onclick="go('dashboard')">🧭<span>Assessments</span></a>
+            <a href="javascript:void(0)">📈<span>Analytics</span></a>
+            <a href="javascript:void(0)">⚙️<span>Settings</span></a>
+          </nav>
+          <div class="foot"><div class="avatar">AR</div><div><div class="nm">Adnan Rahman</div><div class="rl">Relationship Manager</div></div></div>
+        </aside>
+        <div class="main">
+          <div class="topbar"><button class="burger" onclick="openDrawer('side2')">☰</button><h2>New Assessment</h2><div class="grow"></div><span class="pill">Draft</span></div>
+          <div class="content">
+            <div class="flow">
+              <div class="steps">
+                <div class="st on"><div class="n">1</div>Loan Request</div><div class="bar"></div>
+                <div class="st"><div class="n">2</div>UBL Data</div><div class="bar"></div>
+                <div class="st"><div class="n">3</div>Results</div>
+              </div>
+              <div class="card">
+                <h3>Business & loan request</h3>
+                <p style="color:var(--muted);font-size:13px;margin:4px 0 18px">Select the SME and enter the financing they've requested.</p>
+                <label>SME / Business</label>
+                <input class="inp" value="Al-Madina Traders (A/C ****4471)"/>
+                <div class="formrow" style="margin-top:6px">
+                  <div><label>Requested loan amount (PKR)</label><input class="inp num" value="8,000,000"/></div>
+                  <div><label>Requested tenure</label>
+                    <div class="seg" style="margin-top:2px">
+                      <button>12 mo</button><button class="on">24 mo</button><button>36 mo</button><button>48 mo</button>
+                    </div>
+                  </div>
+                </div>
+                <label style="margin-top:16px">Purpose</label>
+                <input class="inp" value="Working capital — inventory expansion"/>
+              </div>
+              <div class="flow-actions">
+                <button class="btn ghost" onclick="go('portfolio')">Cancel</button>
+                <button class="btn" onclick="go('flow2')">Continue →</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ================= FLOW STEP 2 ================= -->
+    <section class="screen" id="s-flow2">
+      <div class="app">
+        <div class="drawer-scrim" onclick="closeDrawer()"></div>
+        <aside class="side" id="side3">
+          <div class="brand"><div class="logo">U</div><div><div class="bt">CashPulse</div><div class="bs">UBL</div></div></div>
+          <nav class="nav">
+            <a href="javascript:void(0)" onclick="go('portfolio')">📊<span>Portfolio</span></a>
+            <a class="on" href="javascript:void(0)">➕<span>New Assessment</span></a>
+            <a href="javascript:void(0)" onclick="go('dashboard')">🧭<span>Assessments</span></a>
+            <a href="javascript:void(0)">📈<span>Analytics</span></a>
+            <a href="javascript:void(0)">⚙️<span>Settings</span></a>
+          </nav>
+          <div class="foot"><div class="avatar">AR</div><div><div class="nm">Adnan Rahman</div><div class="rl">Relationship Manager</div></div></div>
+        </aside>
+        <div class="main">
+          <div class="topbar"><button class="burger" onclick="openDrawer('side3')">☰</button><h2>New Assessment</h2><div class="grow"></div><span class="pill">Draft</span></div>
+          <div class="content">
+            <div class="flow">
+              <div class="steps">
+                <div class="st done"><div class="n">✓</div>Loan Request</div><div class="bar"></div>
+                <div class="st on"><div class="n">2</div>UBL Data</div><div class="bar"></div>
+                <div class="st"><div class="n">3</div>Results</div>
+              </div>
+              <div class="card">
+                <h3>Verified UBL transaction history</h3>
+                <p style="color:var(--muted);font-size:13px;margin:4px 0 16px">CashPulse analyzes only verified UBL data — no uploads, no OCR, no other banks.</p>
+                <div class="grid g3">
+                  <div class="card kpi" style="box-shadow:none;background:#f7fafd"><div class="lbl">Account</div><div class="val num" style="font-size:18px">****4471</div><div class="dl"><span class="chip v">✓ Verified UBL</span></div></div>
+                  <div class="card kpi" style="box-shadow:none;background:#f7fafd"><div class="lbl">Transactions found</div><div class="val num">1,284</div><div class="dl">last 6 months</div></div>
+                  <div class="card kpi" style="box-shadow:none;background:#f7fafd"><div class="lbl">Data window</div><div class="val num" style="font-size:18px">6 mo</div><div class="dl">Feb – Jul 2026</div></div>
+                </div>
+                <label style="margin-top:18px">Analysis window</label>
+                <div class="seg" style="margin-top:2px"><button>3 mo</button><button class="on">6 mo</button><button>12 mo</button></div>
+                <div class="reason" style="margin-top:16px">🔎 <b>Explainability first.</b> Every score CashPulse produces will show the numbers and chart it is based on — nothing hidden.</div>
+              </div>
+              <div class="flow-actions">
+                <button class="btn ghost" onclick="go('flow1')">← Back</button>
+                <button class="btn" onclick="runAnalysis()">Run Analysis →</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ================= ANALYZING ================= -->
+    <section class="screen" id="s-analyzing">
+      <div class="analyzing">
+        <div class="ring-load"></div>
+        <h2 style="font-size:22px">Analyzing UBL transaction history…</h2>
+        <div class="steps-log" id="analog">Engineering features…</div>
+      </div>
+    </section>
+
+    <!-- ================= DASHBOARD ================= -->
+    <section class="screen" id="s-dashboard">
+      <div class="app">
+        <div class="drawer-scrim" onclick="closeDrawer()"></div>
+        <aside class="side" id="side4">
+          <div class="brand"><div class="logo">U</div><div><div class="bt">CashPulse</div><div class="bs">UBL</div></div></div>
+          <nav class="nav">
+            <a href="javascript:void(0)" onclick="go('portfolio')">📊<span>Portfolio</span></a>
+            <a href="javascript:void(0)" onclick="go('flow1')">➕<span>New Assessment</span></a>
+            <a class="on" href="javascript:void(0)">🧭<span>Assessments</span></a>
+            <a href="javascript:void(0)">📈<span>Analytics</span></a>
+            <a href="javascript:void(0)">⚙️<span>Settings</span></a>
+          </nav>
+          <div class="foot"><div class="avatar">AR</div><div><div class="nm">Adnan Rahman</div><div class="rl">Relationship Manager</div></div></div>
+        </aside>
+        <div class="main">
+          <div class="topbar">
+            <button class="burger" onclick="openDrawer('side4')">☰</button>
+            <div><h2 id="dashName">Al-Madina Traders</h2><div style="font-size:12px;color:var(--muted)">Wholesale · Karachi · A/C ****4471</div></div>
+            <div class="grow"></div>
+            <span class="chip v">✓ Verified UBL data</span>
+            <button class="btn sec" onclick="window.print()">🖨 Report</button>
+          </div>
+          <div class="content">
+
+            <div class="grid g2" style="margin-bottom:18px">
+              <div class="card">
+                <h3>Readiness Score</h3>
+                <p style="color:var(--muted);font-size:12.5px;margin:2px 0 16px">Overall financial health from verified UBL data</p>
+                <div class="scorecard">
+                  <div class="gauge">
+                    <svg width="168" height="168" viewBox="0 0 168 168">
+                      <circle cx="84" cy="84" r="72" stroke="#eef3f8" stroke-width="16" fill="none"/>
+                      <circle id="gaugeArc" cx="84" cy="84" r="72" stroke="#1E9E5A" stroke-width="16" fill="none"
+                        stroke-linecap="round" stroke-dasharray="452" stroke-dashoffset="452"/>
+                    </svg>
+                    <div class="cap"><div class="s num" id="gaugeNum">0</div><div class="of">out of 100</div></div>
+                  </div>
+                  <div class="scoremeta">
+                    <h3>Interpretation</h3>
+                    <div class="band" style="color:var(--success)">Strong candidate</div>
+                    <p>Net cashflow has been stable and positive across the last six months, with healthy reserves. Requested financing fits comfortably within safe repayment capacity.</p>
+                  </div>
+                </div>
+              </div>
+
+              <div class="rec">
+                <div class="rh"><span class="badge">APPROVE</span><span style="font-size:13px;color:var(--muted)">Recommendation · RM decides</span></div>
+                <div style="font-size:12.5px;color:var(--muted);margin-top:14px">Recommended amount</div>
+                <div class="amt">PKR 8,000,000</div>
+                <div style="font-size:13px;color:var(--muted)">over 24 months · est. EMI PKR 168,000 / mo</div>
+                <ul>
+                  <li>Safe repayment capacity PKR 200,000/mo covers the EMI (84% headroom rule met)</li>
+                  <li>Requested amount within safe limit — no counter-offer needed</li>
+                  <li>Readiness 86 ≥ 80 threshold for Approve</li>
+                </ul>
+                <div class="decide">
+                  <button class="btn" onclick="showDecision('Approve')">Accept & Recommend</button>
+                  <button class="btn sec" onclick="showDecision('Counter')">Counter-offer</button>
+                  <button class="btn ghost" onclick="showDecision('Escalate')">Escalate to Credit</button>
+                </div>
+              </div>
+            </div>
+
+            <div class="section-title">Score breakdown — click any card for the evidence</div>
+            <div class="grid g3" style="margin-bottom:18px">
+
+              <div class="pillar" onclick="togglePillar(this)">
+                <div class="ph"><div><div class="pt">Cashflow Stability</div><div class="pq">Is income predictable?</div></div><div class="psc" style="color:var(--success)">26<span style="font-size:12px;color:var(--muted)">/30</span></div></div>
+                <div class="pbar"><i style="width:87%;background:var(--success)"></i></div>
+                <div class="expand-hint">▼ Why this score?</div>
+                <div class="evidence">
+                  <div class="reason">Monthly net cashflow stayed stable across the last six months.</div>
+                  <div class="ev"><span>Cashflow volatility (CoV)</span><b class="num">8%</b></div>
+                  <div class="ev"><span>Positive cashflow months</span><b class="num">6 / 6</b></div>
+                  <div class="ev"><span>Avg monthly net cashflow</span><b class="num">PKR 400,000</b></div>
+                </div>
+              </div>
+
+              <div class="pillar" onclick="togglePillar(this)">
+                <div class="ph"><div><div class="pt">Repayment Capacity</div><div class="pq">Can it repay the EMI?</div></div><div class="psc" style="color:var(--success)">22<span style="font-size:12px;color:var(--muted)">/25</span></div></div>
+                <div class="pbar"><i style="width:88%;background:var(--success)"></i></div>
+                <div class="expand-hint">▼ Why this score?</div>
+                <div class="evidence">
+                  <div class="reason">Safe repayment capacity comfortably exceeds the requested EMI.</div>
+                  <div class="ev"><span>Avg monthly net cashflow</span><b class="num">PKR 400,000</b></div>
+                  <div class="ev"><span>Safe capacity (50%)</span><b class="num">PKR 200,000</b></div>
+                  <div class="ev"><span>Requested EMI</span><b class="num">PKR 168,000</b></div>
+                  <div class="ev"><span>Repayment utilization</span><b class="num">84%</b></div>
+                </div>
+              </div>
+
+              <div class="pillar" onclick="togglePillar(this)">
+                <div class="ph"><div><div class="pt">Liquidity</div><div class="pq">Enough reserves?</div></div><div class="psc" style="color:var(--success)">17<span style="font-size:12px;color:var(--muted)">/20</span></div></div>
+                <div class="pbar"><i style="width:85%;background:var(--success)"></i></div>
+                <div class="expand-hint">▼ Why this score?</div>
+                <div class="evidence">
+                  <div class="reason">Reserves cover more than a full month of expenses.</div>
+                  <div class="ev"><span>Average balance</span><b class="num">PKR 1,350,000</b></div>
+                  <div class="ev"><span>Avg monthly outflow</span><b class="num">PKR 1,180,000</b></div>
+                  <div class="ev"><span>Reserve ratio</span><b class="num">1.14×</b></div>
+                </div>
+              </div>
+
+              <div class="pillar" onclick="togglePillar(this)">
+                <div class="ph"><div><div class="pt">Business Behaviour</div><div class="pq">Operates consistently?</div></div><div class="psc" style="color:var(--warn)">11<span style="font-size:12px;color:var(--muted)">/15</span></div></div>
+                <div class="pbar"><i style="width:73%;background:var(--warn)"></i></div>
+                <div class="expand-hint">▼ Why this score?</div>
+                <div class="evidence">
+                  <div class="reason">Regular recurring supplier payments; minor gaps in activity. <i>(Demo: synthetic regularity field.)</i></div>
+                  <div class="ev"><span>Payment regularity</span><b class="num">73%</b></div>
+                  <div class="ev"><span>Recurring supplier payments</span><b class="num">Detected</b></div>
+                  <div class="ev"><span>Missed-payment signals</span><b class="num">Low</b></div>
+                </div>
+              </div>
+
+              <div class="pillar" onclick="togglePillar(this)">
+                <div class="ph"><div><div class="pt">Business Momentum</div><div class="pq">Improving or declining?</div></div><div class="psc" style="color:var(--success)">8<span style="font-size:12px;color:var(--muted)">/10</span></div></div>
+                <div class="pbar"><i style="width:80%;background:var(--success)"></i></div>
+                <div class="expand-hint">▼ Why this score?</div>
+                <div class="evidence">
+                  <div class="reason">Last 3 months outperformed the first 3 months.</div>
+                  <div class="ev"><span>Growth (last 3 vs first 3 mo)</span><b class="num">+14%</b></div>
+                  <div class="ev"><span>Inflow trend</span><b class="num">Upward</b></div>
+                </div>
+              </div>
+
+              <div class="pillar" style="cursor:default;display:flex;flex-direction:column;justify-content:center;background:linear-gradient(135deg,#eaf6fd,#f6fbfe)">
+                <div class="pt">Eligibility Score</div>
+                <div class="pq">Does this loan fit the business?</div>
+                <div class="psc num" style="color:var(--blue);font-size:30px;margin-top:8px">80<span style="font-size:13px;color:var(--muted)">/100</span></div>
+                <div style="font-size:12px;color:var(--muted);margin-top:6px">Readiness 86 · but fit reflects request vs safe capacity</div>
+              </div>
+            </div>
+
+            <div class="card">
+              <div style="display:flex;justify-content:space-between;align-items:center">
+                <div><h3>6-month cashflow trend</h3><p style="color:var(--muted);font-size:12.5px">Inflow vs outflow · verified UBL transactions</p></div>
+                <span class="chip g">Net positive 6/6</span>
+              </div>
+              <svg class="chart" viewBox="0 0 640 200" preserveAspectRatio="none">
+                <line x1="40" y1="20" x2="40" y2="170" stroke="#e4ebf2"/>
+                <line x1="40" y1="170" x2="620" y2="170" stroke="#e4ebf2"/>
+                <polyline points="40,120 136,110 232,96 328,104 424,78 520,66 616,58" fill="none" stroke="#0083CA" stroke-width="3"/>
+                <polyline points="40,150 136,146 232,140 328,148 424,132 520,128 616,126" fill="none" stroke="#D6455B" stroke-width="3" stroke-dasharray="4 4"/>
+                <polygon points="40,120 136,110 232,96 328,104 424,78 520,66 616,58 616,170 40,170" fill="#0083CA" opacity=".07"/>
+                <g font-size="11" fill="#5B6B7C" font-family="Inter">
+                  <text x="34" y="185">Feb</text><text x="128" y="185">Mar</text><text x="224" y="185">Apr</text><text x="322" y="185">May</text><text x="418" y="185">Jun</text><text x="512" y="185">Jul</text>
+                </g>
+              </svg>
+              <div class="legend"><span><i style="background:#0083CA"></i>Inflow</span><span><i style="background:#D6455B"></i>Outflow</span></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="overlay" id="overlay">
+        <div class="modal">
+          <div class="ok" id="mIcon">✓</div>
+          <h3 id="mTitle">Recommendation recorded</h3>
+          <p id="mBody">Your recommendation has been attached to Al-Madina Traders' file with full evidence and forwarded to the Credit team. The final decision remains with the bank.</p>
+          <button class="btn block" onclick="hideModal();go('portfolio')">Back to Portfolio</button>
+          <button class="btn ghost" style="margin-top:8px;width:100%" onclick="hideModal()">Close</button>
+        </div>
+      </div>
+    </section>
+
+  </div>
+</div>
+
+<script>
+const screens=['login','portfolio','flow1','flow2','analyzing','dashboard'];
+const paths={login:'/login',portfolio:'/portfolio',flow1:'/assessment/new',flow2:'/assessment/data',analyzing:'/assessment/run',dashboard:'/assessment/al-madina-traders'};
+function go(id){
+  screens.forEach(s=>document.getElementById('s-'+s).classList.remove('active'));
+  document.getElementById('s-'+id).classList.add('active');
+  document.getElementById('urlpath').textContent=paths[id]||'';
+  document.querySelector('.viewport').scrollTop=0;
+  document.querySelectorAll('.screen').forEach(sc=>sc.scrollTop=0);
+  if(id==='dashboard') setTimeout(animateGauge,120);
+  closeDrawer();
+}
+function runAnalysis(){
+  go('analyzing');
+  const log=document.getElementById('analog');
+  const steps=['Engineering features…','Scoring cashflow stability…','Estimating repayment capacity…','Checking liquidity & reserves…','Assessing behaviour & momentum…','Compiling explainable recommendation…'];
+  let i=0;
+  const t=setInterval(()=>{ log.textContent=steps[i]; i++; if(i>=steps.length){clearInterval(t); setTimeout(()=>go('dashboard'),500);} },520);
+}
+function animateGauge(){
+  const arc=document.getElementById('gaugeArc'), num=document.getElementById('gaugeNum');
+  const target=86, circ=452;
+  arc.style.transition='stroke-dashoffset 1.1s ease'; num.textContent='0';
+  requestAnimationFrame(()=>{ arc.style.strokeDashoffset = circ*(1-target/100); });
+  let n=0; const t=setInterval(()=>{ n+=2; if(n>=target){n=target;clearInterval(t);} num.textContent=n; },22);
+}
+function togglePillar(el){ el.classList.toggle('open'); const h=el.querySelector('.expand-hint'); if(h) h.textContent=el.classList.contains('open')?'▲ Hide evidence':'▼ Why this score?'; }
+function loadSme(name){ document.getElementById('dashName').textContent=name; go('dashboard'); }
+function showDecision(kind){
+  const t=document.getElementById('mTitle'), b=document.getElementById('mBody'), ic=document.getElementById('mIcon');
+  if(kind==='Approve'){t.textContent='Recommendation recorded';ic.textContent='✓';b.textContent="Approve recommendation attached with full evidence and forwarded to Credit. The final decision remains with the bank.";}
+  if(kind==='Counter'){t.textContent='Counter-offer prepared';ic.textContent='↔';b.textContent="A counter-offer at safe capacity has been drafted with supporting evidence for the SME.";}
+  if(kind==='Escalate'){t.textContent='Escalated to Credit';ic.textContent='⤴';b.textContent="File escalated to the Credit team for manual review, with all engineered features and evidence attached.";}
+  document.getElementById('overlay').classList.add('show');
+}
+function hideModal(){document.getElementById('overlay').classList.remove('show');}
+function openDrawer(id){document.getElementById(id).classList.add('open');document.querySelectorAll('.drawer-scrim').forEach(s=>s.classList.add('show'));}
+function closeDrawer(){document.querySelectorAll('.side').forEach(s=>s.classList.remove('open'));document.querySelectorAll('.drawer-scrim').forEach(s=>s.classList.remove('show'));}
+function setMode(m){
+  const vp=document.getElementById('viewport');
+  document.getElementById('tDesk').classList.toggle('on',m==='desk');
+  document.getElementById('tMob').classList.toggle('on',m==='mob');
+  vp.classList.toggle('mobile-mode',m==='mob');
+}
+</script>
+</body>
+</html>

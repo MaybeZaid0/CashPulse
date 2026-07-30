@@ -1,113 +1,100 @@
 # Cash Pulse
 
-Cash Pulse is a comprehensive platform featuring a Next.js frontend and a FastAPI backend with MongoDB. 
-
-This guide will help collaborators easily set up and run the frontend, backend, and database on their local devices without any errors.
+Cash Pulse is an AI-powered financial platform that analyzes SME loan requests and automates disbursement workflows.
 
 ## Prerequisites
 
-Before starting, ensure you have the following installed on your local machine:
-- **Node.js** (v18 or higher recommended) & npm/yarn
-- **Python** (v3.9 or higher recommended)
-- **MongoDB** (running locally or a MongoDB Atlas URI)
-- **Git**
+Before you begin, ensure you have the following installed on your machine:
+- [Node.js](https://nodejs.org/) (v18 or higher) for the frontend
+- [Python](https://www.python.org/) (3.11 or higher) for the backend
+- [MongoDB](https://www.mongodb.com/try/download/community) (Local instance or Docker container)
+- [Git](https://git-scm.com/)
 
 ---
 
-## 1. Database Setup (MongoDB)
+## 🚀 Getting Started
 
-The backend uses MongoDB as its primary database.
+Follow these steps to run the application locally without any errors.
 
-**Option A: Local MongoDB**
-1. Download and install [MongoDB Community Server](https://www.mongodb.com/try/download/community).
-2. Start the MongoDB service. On most systems, it will run on `mongodb://localhost:27017/`.
+### 1. Database Setup (MongoDB)
 
-**Option B: MongoDB Atlas (Cloud)**
-1. Create a cluster on [MongoDB Atlas](https://www.mongodb.com/cloud/atlas).
-2. Obtain your connection string.
+You need a running MongoDB instance. By default, the backend expects MongoDB to run on `localhost:27017`.
 
----
+**Option A: Local Installation**
+- Install [MongoDB Community Server](https://www.mongodb.com/try/download/community) and start the service.
 
-## 2. Backend Setup
+**Option B: Docker**
+If you have Docker installed, you can spin up a MongoDB container quickly:
+```bash
+docker run -d -p 27017:27017 --name cashpulse-mongo mongo:7
+```
 
-The backend is built with FastAPI. Follow these steps to get it running:
+### 2. Backend Setup (FastAPI)
 
-1. **Navigate to the backend directory:**
+The backend is built with Python and FastAPI.
+
+1. Navigate to the backend directory:
    ```bash
    cd backend
    ```
-
-2. **Set up a Python Virtual Environment:**
-   Create a virtual environment to manage dependencies locally.
+2. Create and activate a virtual environment (recommended):
    ```bash
-   # On Windows
    python -m venv venv
+   
+   # On Windows:
    venv\Scripts\activate
-
-   # On macOS/Linux
-   python3 -m venv venv
+   # On macOS/Linux:
    source venv/bin/activate
    ```
-
-3. **Install Dependencies:**
-   Ensure you install all required packages. *(Note: If `requirements.txt` is missing, ensure you pip install `fastapi`, `uvicorn`, `pymongo`, `python-dotenv`, etc., based on the project's imports).*
+3. Install the required dependencies:
    ```bash
    pip install -r requirements.txt
    ```
-
-4. **Environment Variables:**
-   Check the `.env` file in the `backend` directory. Ensure it has the correct MongoDB connection string and any necessary secrets.
+4. Set up Environment Variables:
+   Create a `.env` file in the `backend` directory. You can use the provided `.env.example` as a template, or manually add:
    ```env
-   MONGO_URI=mongodb://localhost:27017/cashpulse
-   # Add other required environment variables here
+   MONGODB_URL=mongodb://localhost:27017
+   DATABASE_NAME=cashpulse
+   JWT_SECRET_KEY=your_super_secret_key_here
+   GEMINI_API_KEY=your_google_gemini_api_key_here
    ```
-
-5. **Run the Backend Server:**
-   Start the FastAPI development server.
+5. Seed the Database (Optional but recommended for testing):
    ```bash
-   uvicorn app.main:app --reload
+   python scripts/seed_data.py
    ```
-   The backend API should now be running at `http://localhost:8000`. You can access the auto-generated documentation at `http://localhost:8000/docs`.
+6. Start the Backend Server:
+   ```bash
+   uvicorn main:app --reload
+   ```
+   The backend API will be available at [http://localhost:8000](http://localhost:8000). You can view the API documentation at [http://localhost:8000/docs](http://localhost:8000/docs).
 
----
+### 3. Frontend Setup (Next.js)
 
-## 3. Frontend Setup
+The frontend is built with Next.js and React.
 
-The frontend is built using Next.js.
-
-1. **Navigate to the frontend directory:**
-   Open a new terminal window/tab and navigate to the frontend:
+1. Open a new terminal and navigate to the frontend directory:
    ```bash
    cd frontend
    ```
-
-2. **Install Dependencies:**
+2. Install the required Node.js dependencies:
    ```bash
    npm install
-   # or
-   yarn install
    ```
-
-3. **Environment Variables:**
-   If there is a `.env.local` or `.env` file required for the frontend (e.g., pointing to the backend API), configure it:
+3. Set up Environment Variables:
+   Create a `.env.local` file in the `frontend` directory and add the backend API URL:
    ```env
    NEXT_PUBLIC_API_URL=http://localhost:8000
    ```
-
-4. **Run the Frontend Development Server:**
+4. Start the Frontend Development Server:
    ```bash
    npm run dev
-   # or
-   yarn dev
    ```
-   The frontend should now be running at `http://localhost:3000`.
+   The frontend application will be available at [http://localhost:3000](http://localhost:3000).
 
 ---
 
 ## Troubleshooting
 
-- **CORS Errors:** If the frontend cannot communicate with the backend due to CORS, ensure the FastAPI backend has `CORSMiddleware` configured to allow origins like `http://localhost:3000`.
-- **Database Connection Issues:** Ensure MongoDB is actively running on the port specified in your `.env` file. 
-- **Port Conflicts:** If ports `3000` or `8000` are already in use, you can run Next.js on a different port using `npm run dev -- -p 3001` or Uvicorn with `uvicorn app.main:app --reload --port 8001`.
-
-Happy coding!
+- **Backend cannot connect to MongoDB**: Ensure your MongoDB server/Docker container is running and accessible at `localhost:27017`.
+- **CORS Errors**: Ensure the frontend is running on `http://localhost:3000` and that this origin is allowed in the backend CORS settings.
+- **Port Conflicts**: If ports 3000 or 8000 are already in use, you can change them by providing different flags (`--port` for uvicorn, or `PORT=3001 npm run dev` for Next.js).
