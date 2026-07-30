@@ -1,0 +1,16 @@
+{
+  "pillars": {
+    "cashflow_stability":    { "weight": 0.30, "max": 30, "label": "Cashflow Stability", "question": "Does this business generate predictable cashflow?" },
+    "repayment_behaviour":   { "weight": 0.25, "max": 25, "label": "Repayment Behaviour", "question": "Does this business demonstrate responsible repayment discipline?" },
+    "debt_service_capacity": { "weight": 0.20, "max": 20, "label": "Debt Service Capacity", "question": "Can this business safely service the requested loan installment?" },
+    "liquidity":             { "weight": 0.15, "max": 15, "label": "Liquidity / Cash Cushion", "question": "Does this business maintain adequate cash reserves?" },
+    "business_momentum":     { "weight": 0.05, "max": 5, "label": "Business Momentum", "question": "Is the business's recent revenue direction improving or declining?" },
+    "data_quality":          { "weight": 0.05, "max": 5, "label": "Data Quality", "question": "How complete and verifiable is the provided bank statement data?" }
+  },
+  "thresholds": {
+    "approve":        80,
+    "counter_offer":  60
+  },
+  "safe_repayment_ratio": 0.50,
+  "data_window_months":   6
+}
