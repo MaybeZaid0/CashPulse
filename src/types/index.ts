@@ -78,10 +78,13 @@ export type RecommendationType = 'APPROVE' | 'COUNTER_OFFER' | 'MANUAL_REVIEW';
 
 export interface EligibilityResult {
   requestedAmount: number;
-  recommendedAmount: number;
+  maxBorrowingCapacity: number;  // Profile Constant
+  recommendedAmount: number;     // Approved loan amount or counter-offer limit
   safeMonthlyInstalment: number;
   requestedInstalment: number;
   coverageRatio: number;
+  eligibilityScore: number;      // Dynamic Deal Eligibility (Readiness * Loan Fit)
+  loanFitRatio: number;          // Capacity vs Asked ratio
 }
 
 export interface Recommendation {

@@ -18,6 +18,7 @@ import {
   Layers,
   Printer,
   Info,
+  MessageSquare,
 } from "lucide-react";
 import {
   ResponsiveContainer,
@@ -42,6 +43,7 @@ export default function AssessmentDashboard({
   onBack,
 }: AssessmentDashboardProps) {
   const [rmNotes, setRmNotes] = useState(application.rmNotes || "");
+  const [activeTab, setActiveTab] = useState<"standard" | "rationale">("rationale");
   const [currentApp, setCurrentApp] = useState<LoanApplication>(application);
   const [expandedPillar, setExpandedPillar] = useState<number | null>(null);
   const [isPrintMode, setIsPrintMode] = useState<boolean>(false);
@@ -98,8 +100,8 @@ export default function AssessmentDashboard({
   );
 
   return (
-    <div className="space-y-6 pb-12">
-      {/* Top Action Bar & F-12 Report Toggle */}
+    <div className="space-y-6 pb-12 font-sans">
+      {/* Top Action Bar */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between bg-white p-4 rounded-2xl border border-[#E4EBF2] shadow-sm gap-3">
         <button
           onClick={onBack}
@@ -115,7 +117,7 @@ export default function AssessmentDashboard({
             className="flex items-center space-x-1.5 px-3 py-1.5 rounded-xl text-xs font-bold bg-[#F4F7FB] border border-[#E4EBF2] text-[#0083CA] hover:bg-[#0083CA]/10 transition-all cursor-pointer"
           >
             <Printer className="w-3.5 h-3.5" />
-            <span>{isPrintMode ? "Standard Dashboard" : "F-12 Printable Summary View"}</span>
+            <span>{isPrintMode ? "Standard Dashboard" : "Printable Summary View"}</span>
           </button>
 
           <span className="text-xs text-[#5B6B7C] font-medium">Decision Status:</span>
@@ -176,7 +178,7 @@ export default function AssessmentDashboard({
 
       {/* Score Ring & Recommendation Panel */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        {/* Readiness Score Ring (AC F-6.1 & F-6.2) */}
+        {/* Readiness Score Ring */}
         <div className="bg-white rounded-2xl p-6 border border-[#E4EBF2] shadow-sm flex flex-col items-center justify-center text-center space-y-4">
           <div className="flex items-center space-x-2 text-[#0E1B2A] font-bold text-sm">
             <Award className="w-5 h-5 text-[#0083CA]" />
@@ -277,9 +279,9 @@ export default function AssessmentDashboard({
               </span>
             </div>
             <div>
-              <span className="text-[#5B6B7C] block text-[11px]">Recommended Limit:</span>
+              <span className="text-[#5B6B7C] block text-[11px]">Constant Max Credit Capacity:</span>
               <span className="font-extrabold text-[#0083CA]">
-                PKR {eligibility.recommendedAmount.toLocaleString()}
+                PKR {(eligibility.maxBorrowingCapacity || eligibility.recommendedAmount).toLocaleString()}
               </span>
             </div>
             <div>
@@ -298,7 +300,7 @@ export default function AssessmentDashboard({
           <div className="flex items-center space-x-2">
             <Layers className="w-5 h-5 text-[#0083CA]" />
             <h3 className="font-bold text-[#0E1B2A] text-base">
-              5 Banking Question Pillars & F-10 Explainability Drill-Down
+              5 Banking Question Pillars & Explainability Drill-Down
             </h3>
           </div>
           <span className="text-xs text-[#5B6B7C]">Click any pillar card to toggle detail view</span>
@@ -357,13 +359,13 @@ export default function AssessmentDashboard({
         </div>
       </div>
 
-      {/* Verified 6-Month UBL Cashflow Chart */}
+      {/* Verified 6-Month Cashflow Chart */}
       <div className="bg-white rounded-2xl p-6 border border-[#E4EBF2] shadow-sm space-y-4">
         <div className="flex items-center justify-between border-b border-[#E4EBF2] pb-3">
           <div className="flex items-center space-x-2">
             <TrendingUp className="w-5 h-5 text-[#0083CA]" />
             <h3 className="font-bold text-[#0E1B2A] text-base">
-              Verified 6-Month UBL Core Banking Cashflow (GR-2 & GR-3)
+              Verified 6-Month UBL Core Banking Cashflow
             </h3>
           </div>
           <span className="text-xs text-[#5B6B7C]">
@@ -389,28 +391,73 @@ export default function AssessmentDashboard({
         </div>
       </div>
 
-      {/* F-11 RM Decision Capture */}
-      <div className="bg-white rounded-2xl p-6 border border-[#E4EBF2] shadow-sm space-y-4">
-        <div className="flex items-center space-x-2 border-b border-[#E4EBF2] pb-3">
-          <Lock className="w-5 h-5 text-[#0083CA]" />
-          <h3 className="font-bold text-[#0E1B2A] text-base">
-            F-11 Relationship Manager Decision Capture & Audit Log
-          </h3>
+      {/* Custom RM Rationale Capture Tab & Decision Control Box */}
+      <div className="bg-white rounded-2xl p-6 border border-[#E4EBF2] shadow-sm space-y-5">
+        <div className="flex items-center justify-between border-b border-[#E4EBF2] pb-3">
+          <div className="flex items-center space-x-2">
+            <Lock className="w-5 h-5 text-[#0083CA]" />
+            <h3 className="font-bold text-[#0E1B2A] text-base">
+              Relationship Manager Decision & Custom Rationale Capture
+            </h3>
+          </div>
+
+          {/* Sub-Tab Selector */}
+          <div className="flex items-center space-x-1 bg-[#F4F7FB] p-1 rounded-xl border border-[#E4EBF2]">
+            <button
+              onClick={() => setActiveTab("rationale")}
+              className={`px-3 py-1 text-xs font-bold rounded-lg transition-all ${
+                activeTab === "rationale"
+                  ? "bg-[#0083CA] text-white shadow-sm"
+                  : "text-[#5B6B7C] hover:text-[#0E1B2A]"
+              }`}
+            >
+              Custom Decision Rationale
+            </button>
+            <button
+              onClick={() => setActiveTab("standard")}
+              className={`px-3 py-1 text-xs font-bold rounded-lg transition-all ${
+                activeTab === "standard"
+                  ? "bg-[#0083CA] text-white shadow-sm"
+                  : "text-[#5B6B7C] hover:text-[#0E1B2A]"
+              }`}
+            >
+              Standard Audit Notes
+            </button>
+          </div>
         </div>
 
         <div className="space-y-4">
-          <div>
-            <label className="block text-xs font-bold text-[#0E1B2A] mb-1">
-              RM Official Rationale & Risk Assessment Notes:
-            </label>
-            <textarea
-              value={rmNotes}
-              onChange={(e) => setRmNotes(e.target.value)}
-              rows={3}
-              placeholder="Enter official credit rationale..."
-              className="w-full p-3 rounded-xl border border-[#E4EBF2] text-xs font-medium focus:outline-none focus:border-[#0083CA]"
-            />
-          </div>
+          {activeTab === "rationale" ? (
+            <div className="space-y-2 bg-[#F4F7FB] p-4 rounded-xl border border-[#E4EBF2]">
+              <div className="flex items-center space-x-2 text-[#0083CA] font-bold text-xs">
+                <MessageSquare className="w-4 h-4" />
+                <span>Relationship Manager Official Rejection / Counter-Offer Rationale:</span>
+              </div>
+              <textarea
+                value={rmNotes}
+                onChange={(e) => setRmNotes(e.target.value)}
+                rows={3}
+                placeholder="Type official credit officer rationale for decision (communicated directly to applicant upon Counter-Offer or Rejection)..."
+                className="w-full p-3 rounded-xl border border-[#E4EBF2] text-xs font-medium bg-white focus:outline-none focus:border-[#0083CA]"
+              />
+              <p className="text-[11px] text-[#5B6B7C] font-medium">
+                Note: This rationale will be displayed directly on the SME Owner's application status dashboard.
+              </p>
+            </div>
+          ) : (
+            <div className="space-y-2">
+              <label className="block text-xs font-bold text-[#0E1B2A] mb-1">
+                Internal Risk Audit Notes:
+              </label>
+              <textarea
+                value={rmNotes}
+                onChange={(e) => setRmNotes(e.target.value)}
+                rows={3}
+                placeholder="Enter internal credit assessment notes..."
+                className="w-full p-3 rounded-xl border border-[#E4EBF2] text-xs font-medium focus:outline-none focus:border-[#0083CA]"
+              />
+            </div>
+          )}
 
           <div className="flex flex-wrap items-center justify-end gap-3 pt-2">
             <button
