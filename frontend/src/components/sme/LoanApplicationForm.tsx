@@ -2,7 +2,7 @@
 
 import React, { useState } from "react";
 import { SMEProfile, AssessmentResult } from "@/types";
-import { runAssessment } from "@/lib/scoring";
+import { apiCreateAssessment } from "@/lib/api-client";
 import ReadinessReportModal from "./ReadinessReportModal";
 import { Calculator, RefreshCw, ShieldCheck } from "lucide-react";
 
@@ -23,14 +23,23 @@ export default function LoanApplicationForm({
   const [isEvaluating, setIsEvaluating] = useState<boolean>(false);
   const [showModal, setShowModal] = useState<boolean>(false);
 
-  const handleCheckReadiness = () => {
+  const handleCheckReadiness = async () => {
     setIsEvaluating(true);
-    setTimeout(() => {
-      const result = runAssessment(sme, requestedAmount, tenureMonths);
-      setAssessmentResult(result);
+    const { data, error } = await apiCreateAssessment(
+      String(sme.id),
+      requestedAmount,
+      tenureMonths
+    );
+
+    if (error) {
+      alert("Error: " + error);
       setIsEvaluating(false);
-      setShowModal(true);
-    }, 400);
+      return;
+    }
+
+    setAssessmentResult(data);
+    setIsEvaluating(false);
+    setShowModal(true);
   };
 
   return (

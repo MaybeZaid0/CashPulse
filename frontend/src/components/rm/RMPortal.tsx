@@ -5,20 +5,35 @@ import { LoanApplication } from "@/types";
 import PortfolioList from "./PortfolioList";
 import AssessmentDashboard from "./AssessmentDashboard";
 import { Building2, Shield, LogOut, KeyRound } from "lucide-react";
+import { apiLogin, clearAuthToken } from "@/lib/api-client";
 
 export default function RMPortal() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+  const [errorMsg, setErrorMsg] = useState("");
   const [email, setEmail] = useState("rm@ubl.com");
   const [password, setPassword] = useState("cashpulse2026");
   const [selectedApp, setSelectedApp] = useState<LoanApplication | null>(null);
 
-  const handleLogin = (e: React.FormEvent) => {
+  const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (email === "rm@ubl.com" && password === "cashpulse2026") {
-      setIsAuthenticated(true);
+    setIsLoading(true);
+    setErrorMsg("");
+    
+    const { data, error } = await apiLogin(email, password);
+    
+    if (error) {
+      setErrorMsg(error);
+      setIsLoading(false);
     } else {
-      alert("Invalid credentials. Demo: rm@ubl.com / cashpulse2026");
+      setIsAuthenticated(true);
+      setIsLoading(false);
     }
+  };
+
+  const handleLogout = () => {
+    clearAuthToken();
+    setIsAuthenticated(false);
   };
 
   if (!isAuthenticated) {
@@ -70,12 +85,19 @@ export default function RMPortal() {
               <p>Password: cashpulse2026</p>
             </div>
 
+            {errorMsg && (
+              <div className="p-3 bg-red-950/50 border border-red-900 rounded-xl text-xs text-red-200">
+                {errorMsg}
+              </div>
+            )}
+
             <button
               type="submit"
-              className="w-full py-3 bg-[#0083CA] hover:bg-[#005B8F] text-white font-extrabold text-xs rounded-xl flex items-center justify-center space-x-2 transition-all"
+              disabled={isLoading}
+              className={`w-full py-3 bg-[#0083CA] hover:bg-[#005B8F] text-white font-extrabold text-xs rounded-xl flex items-center justify-center space-x-2 transition-all ${isLoading ? 'opacity-70 cursor-not-allowed' : ''}`}
             >
               <KeyRound className="w-4 h-4" />
-              <span>Access RM Portal</span>
+              <span>{isLoading ? "Authenticating..." : "Access RM Portal"}</span>
             </button>
           </form>
         </div>
@@ -122,7 +144,7 @@ export default function RMPortal() {
               </div>
 
               <button
-                onClick={() => setIsAuthenticated(false)}
+                onClick={handleLogout}
                 className="flex items-center space-x-1.5 px-3 py-1.5 bg-slate-900 hover:bg-slate-800 text-slate-300 hover:text-white border border-slate-800 rounded-xl text-xs font-bold transition-all"
               >
                 <LogOut className="w-3.5 h-3.5" />

@@ -4,7 +4,9 @@ node_modules/
 .pnp.js
 venv/
 env/
-.env
+# Ignore root-level .env only (backend/.env is tracked)
+/.env
+*.env.local
 
 # Next.js
 .next/

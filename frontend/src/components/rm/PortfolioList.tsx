@@ -3,8 +3,7 @@
 import React, { useState, useEffect } from "react";
 import { LoanApplication } from "@/types";
 import { DEMO_SME_PROFILES } from "@/lib/sme-data";
-import { runAssessment } from "@/lib/scoring";
-import { loadApplications, updateApplication, subscribe } from "@/lib/store";
+import { apiGetAssessments, apiGetSMEs } from "@/lib/api-client";
 import {
   Building2,
   CheckCircle2,
@@ -24,29 +23,47 @@ export default function PortfolioList({ onSelectApplication }: PortfolioListProp
   const [applications, setApplications] = useState<LoanApplication[]>([]);
   const [searchTerm, setSearchTerm] = useState("");
 
+  const [isLoading, setIsLoading] = useState(true);
+
   useEffect(() => {
-    setApplications(loadApplications());
-    const unsubscribe = subscribe((updatedApps) => {
-      setApplications(updatedApps);
-    });
-    return () => unsubscribe();
+    async function loadData() {
+      setIsLoading(true);
+      const [smesRes, appsRes] = await Promise.all([
+        apiGetSMEs(),
+        apiGetAssessments()
+      ]);
+
+      if (!appsRes.error && appsRes.data) {
+        // Map backend assessments to LoanApplication format
+        const smes = smesRes.data || [];
+        
+        const mapped = appsRes.data.map((assessment: any) => {
+          const sme = smes.find((s: any) => String(s.id) === String(assessment.smeId)) 
+            || DEMO_SME_PROFILES.find((s) => String(s.id) === String(assessment.smeId)) 
+            || { name: "Unknown SME", sector: "Unknown" };
+            
+          return {
+            id: assessment.id,
+            smeId: assessment.smeId,
+            smeName: sme.name || "Unknown SME",
+            sector: sme.sector || "Unknown",
+            requestedAmount: assessment.requestedLoan || 0,
+            tenureMonths: assessment.requestedTenure || 0,
+            status: assessment.decision || "PENDING",
+            assessment: assessment.readiness ? {
+              readinessScore: Math.round(assessment.readiness)
+            } : undefined
+          };
+        });
+        setApplications(mapped);
+      }
+      setIsLoading(false);
+    }
+    loadData();
   }, []);
 
   const handleAssess = (app: LoanApplication) => {
-    if (!app.assessment) {
-      const sme = DEMO_SME_PROFILES.find((s) => s.id === app.smeId) || DEMO_SME_PROFILES[0];
-      const assessmentResult = runAssessment(sme, app.requestedAmount, app.tenureMonths);
-
-      const updated = updateApplication(app.id, {
-        status: "ASSESSED",
-        assessment: assessmentResult,
-        assessedAt: new Date().toISOString(),
-      });
-      const found = updated.find((a) => a.id === app.id);
-      onSelectApplication(found || app);
-    } else {
-      onSelectApplication(app);
-    }
+    onSelectApplication(app);
   };
 
   const filteredApps = applications.filter(
