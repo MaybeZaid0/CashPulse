@@ -1,0 +1,32 @@
+# Dependencies
+node_modules/
+.pnp
+.pnp.js
+venv/
+env/
+
+# Ignore root-level .env
+/.env
+*.env.local
+
+# Next.js
+.next/
+out/
+build/
+dist/
+
+# Ignore nested duplicate directory & backend for pure frontend branch
+CashPulse-main/
+backend/
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+.venv
+
+# OS
+.DS_Store
+Thumbs.db
