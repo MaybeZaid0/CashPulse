@@ -8,7 +8,12 @@ class Settings(BaseSettings):
     JWT_SECRET_KEY: str = "cashpulse_ubl_super_secret_jwt_key_2026"
     JWT_ALGORITHM: str = "HS256"
     JWT_EXPIRE_MINUTES: int = 480
-    CORS_ORIGINS: List[str] = ["http://localhost:3000", "http://127.0.0.1:3000"]
+    CORS_ORIGINS: List[str] = [
+        "http://localhost:3000", 
+        "http://127.0.0.1:3000",
+        "https://cashpulse-frontend.vercel.app",  # Add Vercel deployment URL
+        "https://*.vercel.app"  # Allow all Vercel subdomains
+    ]
 
     class Config:
         env_file = ".env"
