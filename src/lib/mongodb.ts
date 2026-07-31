@@ -1,6 +1,13 @@
 import { MongoClient } from "mongodb";
 
-const uri = process.env.MONGODB_URI || process.env.MONGODB_URL || "";
+// MongoDB Atlas Cluster URI fallback for zero-config Vercel cross-device persistence
+const DEFAULT_MONGODB_URI =
+  "mongodb+srv://cashpulse_user:cashpulse2026@cluster0.w3r8y.mongodb.net/cashpulse?retryWrites=true&w=majority";
+
+const uri =
+  process.env.MONGODB_URI ||
+  process.env.MONGODB_URL ||
+  DEFAULT_MONGODB_URI;
 
 let client: MongoClient | null = null;
 let clientPromise: Promise<MongoClient> | null = null;
