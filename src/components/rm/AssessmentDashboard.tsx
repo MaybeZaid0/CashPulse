@@ -45,7 +45,6 @@ export default function AssessmentDashboard({
   onBack,
 }: AssessmentDashboardProps) {
   const [rmNotes, setRmNotes] = useState(application.rmNotes || "");
-  const [activeTab, setActiveTab] = useState<"standard" | "rationale">("rationale");
   const [currentApp, setCurrentApp] = useState<LoanApplication>(application);
   const [expandedPillar, setExpandedPillar] = useState<number | null>(null);
   const [isPrintMode, setIsPrintMode] = useState<boolean>(false);
@@ -97,7 +96,6 @@ export default function AssessmentDashboard({
     if (isLocked) return;
 
     if ((newStatus === "REJECTED" || newStatus === "COUNTER_OFFER") && !rmNotes.trim()) {
-      setActiveTab("rationale");
       setErrorMsg("Official Decision Rationale is mandatory when issuing a Rejection or Counter-Offer so the SME owner can view the reason.");
       return;
     }
@@ -225,7 +223,7 @@ export default function AssessmentDashboard({
           {isLocked && (
             <span className="inline-flex items-center space-x-1.5 px-3 py-1 bg-[#2F9E5E]/15 text-[#2F9E5E] border border-[#2F9E5E]/30 rounded-full text-xs font-bold">
               <Lock className="w-3.5 h-3.5" />
-              <span>Decision Locked (SME Accepted)</span>
+              <span>Decision Locked (RM Confirmed)</span>
             </span>
           )}
           <button
@@ -392,32 +390,6 @@ export default function AssessmentDashboard({
               Relationship Manager Decision Control
             </h3>
           </div>
-
-          {/* Sub-Tab Selector */}
-          {!isLocked && (
-            <div className="flex items-center space-x-1 bg-[#F6F6F6] p-1 rounded-lg border border-[#E2E6E7]">
-              <button
-                onClick={() => setActiveTab("rationale")}
-                className={`px-3 py-1 text-xs font-semibold rounded-lg transition-all ${
-                  activeTab === "rationale"
-                    ? "bg-[#2F96B4] text-white shadow-sm"
-                    : "text-[#5C6B70] hover:text-[#081921]"
-                }`}
-              >
-                Custom Decision Rationale
-              </button>
-              <button
-                onClick={() => setActiveTab("standard")}
-                className={`px-3 py-1 text-xs font-semibold rounded-lg transition-all ${
-                  activeTab === "standard"
-                    ? "bg-[#2F96B4] text-white shadow-sm"
-                    : "text-[#5C6B70] hover:text-[#081921]"
-                }`}
-              >
-                Standard Audit Notes
-              </button>
-            </div>
-          )}
         </div>
 
         <div className="space-y-4">
@@ -441,37 +413,22 @@ export default function AssessmentDashboard({
             </div>
           ) : (
             <>
-              {activeTab === "rationale" ? (
-                <div className="space-y-2 bg-[#F6F6F6] p-4 rounded-xl border border-[#E2E6E7]">
-                  <div className="flex items-center space-x-2 text-[#2F96B4] font-semibold text-xs">
-                    <MessageSquare className="w-4 h-4" />
-                    <span>Relationship Manager Official Rejection / Counter-Offer Rationale:</span>
-                  </div>
-                  <textarea
-                    value={rmNotes}
-                    onChange={(e) => setRmNotes(e.target.value)}
-                    rows={3}
-                    placeholder="Type official credit officer rationale for decision (communicated directly to applicant upon Counter-Offer or Rejection)..."
-                    className="w-full p-3 rounded-lg border border-[#E2E6E7] text-xs font-medium bg-white focus:outline-none focus:border-[#2F96B4] focus:ring-2 focus:ring-[#2F96B4]/15"
-                  />
-                  <p className="text-[11px] text-[#5C6B70] font-medium">
-                    Note: This rationale will be displayed directly on the SME Owner's application status dashboard.
-                  </p>
+              <div className="space-y-2 bg-[#F6F6F6] p-4 rounded-xl border border-[#E2E6E7]">
+                <div className="flex items-center space-x-2 text-[#2F96B4] font-semibold text-xs">
+                  <MessageSquare className="w-4 h-4" />
+                  <span>Relationship Manager Official Rejection / Counter-Offer Rationale:</span>
                 </div>
-              ) : (
-                <div className="space-y-2">
-                  <label className="block text-xs font-semibold text-[#5C6B70] mb-1">
-                    Internal Risk Audit Notes:
-                  </label>
-                  <textarea
-                    value={rmNotes}
-                    onChange={(e) => setRmNotes(e.target.value)}
-                    rows={3}
-                    placeholder="Enter internal credit assessment notes..."
-                    className="w-full p-3 rounded-lg border border-[#E2E6E7] text-xs font-medium focus:outline-none focus:border-[#2F96B4] focus:ring-2 focus:ring-[#2F96B4]/15"
-                  />
-                </div>
-              )}
+                <textarea
+                  value={rmNotes}
+                  onChange={(e) => setRmNotes(e.target.value)}
+                  rows={3}
+                  placeholder="Type official credit officer rationale for decision (communicated directly to applicant upon Counter-Offer or Rejection)..."
+                  className="w-full p-3 rounded-lg border border-[#E2E6E7] text-xs font-medium bg-white focus:outline-none focus:border-[#2F96B4] focus:ring-2 focus:ring-[#2F96B4]/15"
+                />
+                <p className="text-[11px] text-[#5C6B70] font-medium">
+                  Note: This rationale will be displayed directly on the SME Owner's application status dashboard.
+                </p>
+              </div>
 
               {errorMsg && (
                 <div className="p-3 bg-[#D9534F]/10 border border-[#D9534F]/30 rounded-xl text-xs font-bold text-[#D9534F]">
