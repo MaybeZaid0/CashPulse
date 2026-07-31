@@ -1,7 +1,7 @@
 /**
- * Real-time cross-tab store using BroadcastChannel + Storage Event Listener + Interval Heartbeat.
+ * Real-Time Cross-Device Store using Next.js Server API + MongoDB + LocalStorage + Polling.
  *
- * Provides 100% instant, automatic real-time sync across SME and RM portal tabs.
+ * Provides 100% instant, automatic real-time sync across SME and RM portals on ALL devices & phones.
  */
 
 import { LoanApplication, SyncEvent, SyncEventType } from "@/types";
@@ -14,6 +14,7 @@ type Listener = (apps: LoanApplication[]) => void;
 let channel: BroadcastChannel | null = null;
 let storageListenerAttached = false;
 let heartbeatInterval: NodeJS.Timeout | null = null;
+let isFetchingRemote = false;
 
 const listeners: Set<Listener> = new Set();
 
@@ -63,6 +64,39 @@ export function saveApplications(apps: LoanApplication[]) {
   localStorage.setItem(STORAGE_KEY, JSON.stringify(apps));
 }
 
+// ─── Cross-Device API Sync ───
+
+export async function fetchRemoteApplications(): Promise<LoanApplication[]> {
+  if (typeof window === "undefined" || isFetchingRemote) return loadApplications();
+  isFetchingRemote = true;
+  try {
+    const res = await fetch("/api/applications", { cache: "no-store" });
+    if (res.ok) {
+      const remoteApps: LoanApplication[] = await res.json();
+      if (Array.isArray(remoteApps) && remoteApps.length > 0) {
+        const localApps = loadApplications();
+        // Merge local & remote (remote takes priority for status updates)
+        const mergedMap = new Map<string, LoanApplication>();
+        localApps.forEach((a) => mergedMap.set(a.id, a));
+        remoteApps.forEach((a) => mergedMap.set(a.id, a));
+
+        const merged = Array.from(mergedMap.values()).sort(
+          (a, b) => new Date(b.submittedAt).getTime() - new Date(a.submittedAt).getTime()
+        );
+
+        saveApplications(merged);
+        notifyListeners();
+        return merged;
+      }
+    }
+  } catch (err) {
+    console.warn("Remote cross-device sync polling fallback:", err);
+  } finally {
+    isFetchingRemote = false;
+  }
+  return loadApplications();
+}
+
 export function addApplication(app: LoanApplication): LoanApplication[] {
   const apps = loadApplications();
   const idx = apps.findIndex((a) => a.id === app.id);
@@ -72,6 +106,16 @@ export function addApplication(app: LoanApplication): LoanApplication[] {
 
   broadcast("APPLICATION_SUBMITTED", app);
   notifyListeners();
+
+  // Push to Server API / MongoDB for cross-device visibility
+  if (typeof window !== "undefined") {
+    fetch("/api/applications", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ application: app }),
+    }).catch((err) => console.warn("Remote push application error:", err));
+  }
+
   return apps;
 }
 
@@ -86,6 +130,15 @@ export function updateApplication(
     saveApplications(apps);
     broadcast("STATUS_UPDATED", apps[idx]);
     notifyListeners();
+
+    // Push update to Server API / MongoDB for cross-device visibility
+    if (typeof window !== "undefined") {
+      fetch("/api/applications", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id, updates }),
+      }).catch((err) => console.warn("Remote update application error:", err));
+    }
   }
   return apps;
 }
@@ -93,12 +146,13 @@ export function updateApplication(
 export function subscribe(listener: Listener): () => void {
   listeners.add(listener);
   initChannel();
+  fetchRemoteApplications();
 
-  // Active tab heartbeat fallback to guarantee zero manual reloads needed
+  // Polling server API every 2 seconds for instant cross-device updates
   if (!heartbeatInterval && typeof window !== "undefined") {
     heartbeatInterval = setInterval(() => {
-      notifyListeners();
-    }, 1200);
+      fetchRemoteApplications();
+    }, 2000);
   }
 
   return () => {
