@@ -66,7 +66,15 @@ export default function AssessmentDashboard({
 
   const { readinessScore, pillarEvidences, eligibility, recommendation, cashflowChartData } = assessment;
 
+  const [errorMsg, setErrorMsg] = useState<string>("");
+
   const handleRmDecision = (newStatus: LoanApplication["status"]) => {
+    if ((newStatus === "REJECTED" || newStatus === "COUNTER_OFFER") && !rmNotes.trim()) {
+      setActiveTab("rationale");
+      setErrorMsg("Official Decision Rationale is mandatory when issuing a Rejection or Counter-Offer so the SME owner can view the reason.");
+      return;
+    }
+
     const sme = DEMO_SME_PROFILES.find((s) => s.id === currentApp.smeId) || DEMO_SME_PROFILES[0];
     const qualitativeReasons = generateQualitativePillarFeedback(
       sme,
@@ -77,7 +85,7 @@ export default function AssessmentDashboard({
 
     updateApplication(currentApp.id, {
       status: newStatus,
-      rmNotes,
+      rmNotes: rmNotes.trim(),
       qualitativeReasons,
     });
     onBack();
@@ -402,23 +410,23 @@ export default function AssessmentDashboard({
           </div>
 
           {/* Sub-Tab Selector */}
-          <div className="flex items-center space-x-1 bg-[#F4F7FB] p-1 rounded-xl border border-[#E4EBF2]">
+          <div className="flex items-center space-x-1 bg-[#F6F6F6] p-1 rounded-lg border border-[#E2E6E7]">
             <button
               onClick={() => setActiveTab("rationale")}
-              className={`px-3 py-1 text-xs font-bold rounded-lg transition-all ${
+              className={`px-3 py-1 text-xs font-semibold rounded-lg transition-all ${
                 activeTab === "rationale"
-                  ? "bg-[#0083CA] text-white shadow-sm"
-                  : "text-[#5B6B7C] hover:text-[#0E1B2A]"
+                  ? "bg-[#2F96B4] text-white shadow-sm"
+                  : "text-[#5C6B70] hover:text-[#081921]"
               }`}
             >
               Custom Decision Rationale
             </button>
             <button
               onClick={() => setActiveTab("standard")}
-              className={`px-3 py-1 text-xs font-bold rounded-lg transition-all ${
+              className={`px-3 py-1 text-xs font-semibold rounded-lg transition-all ${
                 activeTab === "standard"
-                  ? "bg-[#0083CA] text-white shadow-sm"
-                  : "text-[#5B6B7C] hover:text-[#0E1B2A]"
+                  ? "bg-[#2F96B4] text-white shadow-sm"
+                  : "text-[#5C6B70] hover:text-[#081921]"
               }`}
             >
               Standard Audit Notes
@@ -428,8 +436,8 @@ export default function AssessmentDashboard({
 
         <div className="space-y-4">
           {activeTab === "rationale" ? (
-            <div className="space-y-2 bg-[#F4F7FB] p-4 rounded-xl border border-[#E4EBF2]">
-              <div className="flex items-center space-x-2 text-[#0083CA] font-bold text-xs">
+            <div className="space-y-2 bg-[#F6F6F6] p-4 rounded-xl border border-[#E2E6E7]">
+              <div className="flex items-center space-x-2 text-[#2F96B4] font-semibold text-xs">
                 <MessageSquare className="w-4 h-4" />
                 <span>Relationship Manager Official Rejection / Counter-Offer Rationale:</span>
               </div>
@@ -438,15 +446,15 @@ export default function AssessmentDashboard({
                 onChange={(e) => setRmNotes(e.target.value)}
                 rows={3}
                 placeholder="Type official credit officer rationale for decision (communicated directly to applicant upon Counter-Offer or Rejection)..."
-                className="w-full p-3 rounded-xl border border-[#E4EBF2] text-xs font-medium bg-white focus:outline-none focus:border-[#0083CA]"
+                className="w-full p-3 rounded-lg border border-[#E2E6E7] text-xs font-medium bg-white focus:outline-none focus:border-[#2F96B4] focus:ring-2 focus:ring-[#2F96B4]/15"
               />
-              <p className="text-[11px] text-[#5B6B7C] font-medium">
+              <p className="text-[11px] text-[#5C6B70] font-medium">
                 Note: This rationale will be displayed directly on the SME Owner's application status dashboard.
               </p>
             </div>
           ) : (
             <div className="space-y-2">
-              <label className="block text-xs font-bold text-[#0E1B2A] mb-1">
+              <label className="block text-xs font-semibold text-[#5C6B70] mb-1">
                 Internal Risk Audit Notes:
               </label>
               <textarea
@@ -454,39 +462,49 @@ export default function AssessmentDashboard({
                 onChange={(e) => setRmNotes(e.target.value)}
                 rows={3}
                 placeholder="Enter internal credit assessment notes..."
-                className="w-full p-3 rounded-xl border border-[#E4EBF2] text-xs font-medium focus:outline-none focus:border-[#0083CA]"
+                className="w-full p-3 rounded-lg border border-[#E2E6E7] text-xs font-medium focus:outline-none focus:border-[#2F96B4] focus:ring-2 focus:ring-[#2F96B4]/15"
               />
             </div>
           )}
 
+          {errorMsg && (
+            <div className="p-3 bg-[#D9534F]/10 border border-[#D9534F]/30 rounded-xl text-xs font-bold text-[#D9534F]">
+              ⚠️ {errorMsg}
+            </div>
+          )}
+
           <div className="flex flex-wrap items-center justify-end gap-3 pt-2">
+            {/* Danger / Reject (Outline #D9534F) */}
             <button
               onClick={() => handleRmDecision("REJECTED")}
-              className="px-4 py-2.5 bg-slate-900 hover:bg-slate-950 text-white font-bold text-xs rounded-xl transition-all flex items-center justify-center space-x-1.5 border border-slate-800 cursor-pointer"
+              className="px-4 py-2 bg-white hover:bg-[#D9534F]/10 text-[#D9534F] font-semibold text-xs rounded-lg transition-all flex items-center justify-center space-x-1.5 border border-[#D9534F] cursor-pointer"
             >
-              <AlertTriangle className="w-4 h-4 text-rose-500" />
+              <AlertTriangle className="w-4 h-4 text-[#D9534F]" />
               <span>Reject Request</span>
             </button>
 
+            {/* Escalate */}
             <button
               onClick={() => handleRmDecision("MANUAL_REVIEW")}
-              className="px-4 py-2.5 bg-[#D6455B] hover:bg-[#D6455B]/90 text-white font-bold text-xs rounded-xl transition-all flex items-center justify-center space-x-1.5 cursor-pointer"
+              className="px-4 py-2 bg-white hover:bg-[#2F96B4]/10 text-[#2F96B4] font-semibold text-xs rounded-lg transition-all flex items-center justify-center space-x-1.5 border border-[#2F96B4] cursor-pointer"
             >
               <AlertTriangle className="w-4 h-4" />
               <span>Escalate to Senior</span>
             </button>
 
+            {/* Warning / Counter Offer (Outline #E0A63B) */}
             <button
               onClick={() => handleRmDecision("COUNTER_OFFER")}
-              className="px-4 py-2.5 bg-[#E8A33D] hover:bg-[#E8A33D]/90 text-white font-bold text-xs rounded-xl transition-all flex items-center justify-center space-x-1.5 cursor-pointer"
+              className="px-4 py-2 bg-white hover:bg-[#E0A63B]/10 text-[#E0A63B] font-semibold text-xs rounded-lg transition-all flex items-center justify-center space-x-1.5 border border-[#E0A63B] cursor-pointer"
             >
               <FileText className="w-4 h-4" />
               <span>Issue Counter-Offer (PKR {eligibility.recommendedAmount.toLocaleString()})</span>
             </button>
 
+            {/* Primary / Accept (Solid #2F96B4 / #2F9E5E) */}
             <button
               onClick={() => handleRmDecision("APPROVED")}
-              className="px-5 py-2.5 bg-[#1E9E5A] hover:bg-[#1E9E5A]/90 text-white font-extrabold text-xs rounded-xl transition-all flex items-center justify-center space-x-1.5 cursor-pointer"
+              className="px-5 py-2 bg-[#2F96B4] hover:bg-[#257A93] text-white font-semibold text-xs rounded-lg transition-all flex items-center justify-center space-x-1.5 shadow-md shadow-[#2F96B4]/20 cursor-pointer"
             >
               <CheckCircle2 className="w-4 h-4" />
               <span>Approve & Disburse</span>
