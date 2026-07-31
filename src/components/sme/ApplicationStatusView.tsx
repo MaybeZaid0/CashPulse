@@ -69,8 +69,9 @@ export default function ApplicationStatusView({ sme }: ApplicationStatusViewProp
     const approvedAmount = app.assessment?.eligibility.recommendedAmount || Math.round(app.requestedAmount * 0.65);
     updateApplication(app.id, {
       status: "APPROVED",
+      smeAccepted: true,
       rmNotes: app.rmNotes ? `${app.rmNotes} [SME Accepted Counter-Offer for PKR ${approvedAmount.toLocaleString()}]` : `SME Accepted Counter-Offer for PKR ${approvedAmount.toLocaleString()}`,
-    });
+    } as any);
 
     setModal({
       isOpen: true,
@@ -84,6 +85,11 @@ export default function ApplicationStatusView({ sme }: ApplicationStatusViewProp
 
   const handleRequestDisbursement = (app: LoanApplication) => {
     const amount = app.assessment?.eligibility.recommendedAmount || app.requestedAmount;
+    updateApplication(app.id, {
+      smeAccepted: true,
+      disbursementRequested: true,
+    } as any);
+
     setModal({
       isOpen: true,
       title: "Loan Transfer Initiated",
